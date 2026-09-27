@@ -1,14 +1,21 @@
 {
-  "name": "btb-scaffold",
+  "name": "btb",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm-run-all --parallel dev:frontend dev:backend",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "dev:frontend": "next dev",
+    "dev:backend": "convex dev"
   },
   "dependencies": {
+    "@auth/core": "^0.41.1",
+    "@convex-dev/auth": "^0.0.95",
+    "convex": "^1.46.0",
+    "jose": "^6.2.12",
+    "lucide-react": "^1.47.0",
     "next": "16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8"
@@ -20,6 +27,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "npm-run-all": "^4.1.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

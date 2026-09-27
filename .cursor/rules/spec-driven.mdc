@@ -1,0 +1,39 @@
+---
+description: Spec-drevet utvikling — les og følg specs/ før kode
+alwaysApply: true
+---
+
+# Spec-drevet utvikling
+
+Dette prosjektet styres av filene i `specs/`. De er source of truth for produkt, tech, datamodell, features, design og roadmap.
+
+## Før du implementerer
+
+1. Les `specs/README.md` og relevant spec for oppgaven.
+2. Bekreft at arbeidet matcher **nåværende fase** i `specs/06-roadmap.md` (fase 1 = solo MVP).
+3. Hvis oppgaven utvider scope: oppdater spec først, deretter kode.
+
+## Låste valg (ikke ombestem uten spec-endring)
+
+- Stack: Next.js (App Router) + Convex + Convex Auth + Tailwind
+- MVP: solo-flyt; ikke gruppe/konkurranse ennå
+- Bar-data: manuelt kuratert Trondheim-seed
+- UI-språk: norsk bokmål — BTB, utfordringer, «Vi overlevde» (ikke school-/øving-tema)
+- Gjesteflyt: uten konto OK; auto-slett dagen etter; lagring krever claim
+- Design: følg `specs/05-design.md`
+- Ansvar / personvern: `specs/07-disclaimer.md`, `specs/08-privacy.md`
+- Ikoner: Lucide (`lucide-react`)
+- UI-arbeid: `npx ui-skills` via `.cursor/skills/ui-skills`
+
+## Convex
+
+- Validators på alle public functions (args + returns)
+- Auth **eller** gyldig gjeste-token for muterende egen data
+- Indekser fremfor query `.filter()`
+- Alltid `await` promises
+- Ingen `Date.now()` inne i queries — send `now` fra klient
+- Cron for slett av utløpte `guestSessions`
+
+## Referanse
+
+Se også rotfilen `AGENTS.md`.

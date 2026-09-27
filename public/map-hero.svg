@@ -1,0 +1,243 @@
+<svg id="mapSvg" viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#21130D"/>
+      <stop offset="50%" stop-color="#1A0E0A"/>
+      <stop offset="100%" stop-color="#120A07"/>
+    </linearGradient>
+    <linearGradient id="riverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3D1A0E"/>
+      <stop offset="50%" stop-color="#2E130A"/>
+      <stop offset="100%" stop-color="#1F0B06"/>
+    </linearGradient>
+    <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F5D4"/>
+      <stop offset="50%" stop-color="#00E5FF"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+    <radialGradient id="startPinTop" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="60%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </radialGradient>
+    <linearGradient id="startPinBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="50%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <radialGradient id="endPinTop" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="60%" stop-color="#EAB308"/>
+      <stop offset="100%" stop-color="#CA8A04"/>
+    </radialGradient>
+    <linearGradient id="endPinBody" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FACC15"/>
+      <stop offset="50%" stop-color="#CA8A04"/>
+      <stop offset="100%" stop-color="#854D0E"/>
+    </linearGradient>
+    <radialGradient id="pinShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="pinDropShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="2" dy="8" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <rect width="1000" height="700" fill="url(#bgGradient)"/>
+
+  <g id="district-blocks" opacity="0.45">
+    <rect x="75" y="85" width="120" height="105" rx="6" fill="#2E1810" stroke="#4A2518" stroke-width="1"/>
+    <rect x="210" y="85" width="110" height="105" rx="6" fill="#2A160E" stroke="#4A2518" stroke-width="1"/>
+    <rect x="340" y="85" width="110" height="105" rx="6" fill="#331A12" stroke="#4A2518" stroke-width="1"/>
+    <rect x="465" y="85" width="90" height="105" rx="6" fill="#2E1810" stroke="#4A2518" stroke-width="1"/>
+    <rect x="75" y="210" width="120" height="140" rx="6" fill="#2A160E" stroke="#4A2518" stroke-width="1"/>
+    <rect x="210" y="210" width="110" height="140" rx="6" fill="#381B12" stroke="#5A2D1D" stroke-width="1"/>
+    <rect x="340" y="210" width="110" height="140" rx="6" fill="#3D1E14" stroke="#5A2D1D" stroke-width="1"/>
+    <rect x="465" y="210" width="90" height="140" rx="6" fill="#381B12" stroke="#5A2D1D" stroke-width="1"/>
+    <rect x="75" y="370" width="120" height="120" rx="6" fill="#28140D" stroke="#4A2518" stroke-width="1"/>
+    <rect x="210" y="370" width="110" height="120" rx="6" fill="#381B12" stroke="#5A2D1D" stroke-width="1"/>
+    <rect x="340" y="370" width="110" height="120" rx="6" fill="#381B12" stroke="#5A2D1D" stroke-width="1"/>
+    <rect x="465" y="370" width="90" height="120" rx="6" fill="#2E1810" stroke="#4A2518" stroke-width="1"/>
+    <rect x="745" y="110" width="215" height="80" rx="6" fill="#2A160E" stroke="#4A2518" stroke-width="1"/>
+    <rect x="745" y="210" width="215" height="160" rx="6" fill="#381B12" stroke="#4A2518" stroke-width="1"/>
+    <rect x="745" y="390" width="215" height="120" rx="6" fill="#2E1810" stroke="#4A2518" stroke-width="1"/>
+    <rect x="745" y="530" width="215" height="95" rx="6" fill="#28140D" stroke="#4A2518" stroke-width="1"/>
+  </g>
+
+  <g id="waterway">
+    <path d="M 640,-10 C 620,100 590,190 590,270 C 590,380 610,480 580,580 C 560,650 530,680 510,710 L 630,710 C 660,670 690,620 710,540 C 740,430 735,320 720,230 C 705,140 715,60 740,-10 Z" fill="url(#riverGradient)" stroke="#5E2614" stroke-width="2"/>
+    <path d="M 670,40 Q 640,160 645,280" fill="none" stroke="#CC3F0C" stroke-width="1.5" opacity="0.35"/>
+    <path d="M 670,330 Q 660,450 610,580" fill="none" stroke="#CC3F0C" stroke-width="1.5" opacity="0.35"/>
+  </g>
+
+  <g id="parks">
+    <rect x="300" y="330" width="60" height="60" rx="8" fill="#4A2515" stroke="#7A3920" stroke-width="1.5" opacity="0.9"/>
+    <circle cx="330" cy="360" r="7" fill="#CC3F0C" opacity="0.8"/>
+    <path d="M 85,380 C 130,375 185,380 185,420 C 185,470 140,480 85,480 Z" fill="#382613" stroke="#5E3F1A" stroke-width="1.5" opacity="0.85"/>
+    <circle cx="105" cy="405" r="9" fill="#523516" opacity="0.75"/>
+    <circle cx="125" cy="420" r="12" fill="#452C12" opacity="0.75"/>
+    <path d="M 85,525 C 240,515 480,525 500,570 C 510,610 380,630 85,630 Z" fill="#332110" stroke="#523517" stroke-width="1.2" opacity="0.8"/>
+    <circle cx="280" cy="565" r="11" fill="#452C12" opacity="0.7"/>
+    <circle cx="380" cy="570" r="14" fill="#4D3114" opacity="0.7"/>
+  </g>
+
+  <g id="buildings" fill="#4A2418" stroke="#703422" stroke-width="1" opacity="0.9">
+    <rect x="88" y="96" width="40" height="36" rx="3"/>
+    <rect x="136" y="96" width="46" height="36" rx="3"/>
+    <rect x="88" y="142" width="94" height="38" rx="3"/>
+    <rect x="220" y="96" width="40" height="36" rx="3"/>
+    <rect x="268" y="96" width="42" height="36" rx="3"/>
+    <rect x="220" y="142" width="90" height="38" rx="3"/>
+    <rect x="350" y="96" width="42" height="36" rx="3"/>
+    <rect x="400" y="96" width="40" height="36" rx="3"/>
+    <rect x="350" y="142" width="90" height="38" rx="3"/>
+    <rect x="475" y="96" width="30" height="84" rx="2" fill="#5C2B1C"/>
+    <rect x="512" y="96" width="32" height="84" rx="2" fill="#5C2B1C"/>
+    <rect x="88" y="222" width="42" height="50" rx="3"/>
+    <rect x="138" y="222" width="44" height="50" rx="3"/>
+    <rect x="88" y="282" width="94" height="52" rx="3"/>
+    <rect x="220" y="222" width="40" height="48" rx="3" fill="#54281A"/>
+    <rect x="268" y="222" width="42" height="48" rx="3" fill="#54281A"/>
+    <rect x="220" y="280" width="88" height="50" rx="3" fill="#54281A"/>
+    <rect x="352" y="222" width="40" height="50" rx="3" fill="#592A1C"/>
+    <rect x="400" y="222" width="40" height="50" rx="3" fill="#592A1C"/>
+    <rect x="352" y="282" width="88" height="50" rx="3" fill="#592A1C"/>
+    <rect x="475" y="222" width="30" height="110" rx="2" fill="#632F1F"/>
+    <rect x="512" y="222" width="32" height="110" rx="2" fill="#632F1F"/>
+    <path d="M 88,435 L 118,435 L 118,422 L 128,422 L 128,435 L 138,435 L 138,465 L 88,465 Z" fill="#6E321E" stroke="#8A4027" stroke-width="1.2"/>
+    <rect x="220" y="382" width="42" height="44" rx="3"/>
+    <rect x="270" y="382" width="40" height="44" rx="3"/>
+    <rect x="220" y="434" width="90" height="48" rx="3"/>
+    <rect x="352" y="382" width="40" height="44" rx="3"/>
+    <rect x="400" y="382" width="40" height="44" rx="3"/>
+    <rect x="352" y="434" width="88" height="48" rx="3"/>
+    <rect x="475" y="382" width="30" height="98" rx="2" fill="#5C2B1C"/>
+    <rect x="512" y="382" width="32" height="98" rx="2" fill="#5C2B1C"/>
+    <rect x="758" y="126" width="38" height="52" rx="3"/>
+    <rect x="804" y="126" width="42" height="52" rx="3"/>
+    <rect x="872" y="126" width="76" height="54" rx="3"/>
+    <rect x="742" y="224" width="26" height="24" rx="2" fill="#522919" stroke="#873F22" stroke-width="1"/>
+    <rect x="800" y="222" width="46" height="56" rx="3"/>
+    <rect x="860" y="222" width="88" height="56" rx="3"/>
+    <rect x="758" y="288" width="36" height="66" rx="3"/>
+    <rect x="872" y="288" width="76" height="66" rx="3"/>
+    <rect x="758" y="402" width="40" height="46" rx="3"/>
+    <rect x="806" y="402" width="40" height="46" rx="3"/>
+    <rect x="758" y="456" width="88" height="46" rx="3"/>
+    <rect x="872" y="402" width="76" height="100" rx="3"/>
+    <rect x="758" y="538" width="88" height="65" rx="3"/>
+    <rect x="872" y="538" width="76" height="65" rx="3"/>
+  </g>
+
+  <g id="roads">
+    <g stroke="#662C17" stroke-width="2.5" fill="none" opacity="0.75">
+      <line x1="30" y1="80" x2="560" y2="80"/>
+      <line x1="30" y1="500" x2="560" y2="500"/>
+      <line x1="30" y1="620" x2="560" y2="620"/>
+      <line x1="70" y1="40" x2="70" y2="650"/>
+      <line x1="460" y1="40" x2="460" y2="650"/>
+      <line x1="560" y1="40" x2="560" y2="650"/>
+      <line x1="740" y1="40" x2="740" y2="650"/>
+      <line x1="860" y1="40" x2="860" y2="650"/>
+      <line x1="740" y1="110" x2="970" y2="110"/>
+      <line x1="740" y1="520" x2="970" y2="520"/>
+    </g>
+    <g stroke="#CC3F0C" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
+      <line x1="20" y1="200" x2="560" y2="200"/>
+      <line x1="20" y1="360" x2="560" y2="360"/>
+      <line x1="330" y1="30" x2="330" y2="650"/>
+      <line x1="200" y1="30" x2="200" y2="650"/>
+      <line x1="740" y1="200" x2="980" y2="200"/>
+      <line x1="740" y1="380" x2="980" y2="380"/>
+    </g>
+    <g stroke="#FFA07A" stroke-width="1.2" fill="none" opacity="0.45" stroke-dasharray="6,4">
+      <line x1="20" y1="200" x2="560" y2="200"/>
+      <line x1="20" y1="360" x2="560" y2="360"/>
+      <line x1="330" y1="30" x2="330" y2="650"/>
+      <line x1="200" y1="30" x2="200" y2="650"/>
+    </g>
+    <g id="bridges" stroke="#E65100" stroke-width="9" stroke-linecap="butt">
+      <line x1="560" y1="200" x2="740" y2="200"/>
+      <line x1="560" y1="375" x2="740" y2="378"/>
+    </g>
+    <g stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="butt" opacity="0.75">
+      <line x1="560" y1="196" x2="740" y2="196"/>
+      <line x1="560" y1="204" x2="740" y2="204"/>
+      <line x1="560" y1="371" x2="740" y2="374"/>
+      <line x1="560" y1="379" x2="740" y2="382"/>
+    </g>
+  </g>
+
+  <g id="labels" font-family="system-ui, -apple-system, sans-serif" font-weight="700">
+    <text x="80" y="65" fill="#FF7D42" font-size="14" letter-spacing="2" opacity="0.9">HOSPITALSL&#216;KKAN</text>
+    <text x="235" y="65" fill="#FF7D42" font-size="14" letter-spacing="2" opacity="0.92">RAVNKLOA</text>
+    <text x="330" y="322" fill="#FFAB91" font-size="16" letter-spacing="2" text-anchor="middle" opacity="1">TORVET</text>
+    <text x="860" y="85" fill="#FF7D42" font-size="15" letter-spacing="2" text-anchor="middle" opacity="0.95">BAKKLANDET</text>
+    <text x="240" y="640" fill="#FF7D42" font-size="14" letter-spacing="2" opacity="0.9">MARINEN &amp; &#216;YA</text>
+    <text x="660" y="470" fill="#E07040" font-size="15" font-style="italic" font-weight="bold" letter-spacing="5" transform="rotate(-75, 660, 470)" opacity="0.95">NIDELVA</text>
+    <text x="40" y="193" fill="#FFCCBC" font-size="11" font-weight="600" opacity="0.9">Olav Tryggvasons gate</text>
+    <text x="40" y="353" fill="#FFCCBC" font-size="11" font-weight="600" opacity="0.9">Kongens gate</text>
+    <text x="590" y="365" fill="#FFAB91" font-size="10" font-weight="bold" opacity="0.95">Gamle Bybro</text>
+    <text x="595" y="190" fill="#FFAB91" font-size="10" font-weight="bold" opacity="0.95">Bakke Bru</text>
+    <text x="336" y="150" fill="#FFCCBC" font-size="11" font-weight="600" transform="rotate(90, 336, 150)" opacity="0.85">Munkegata</text>
+  </g>
+
+  <g id="navigation-route">
+    <path d="M 150,450 L 188,450 Q 200,450 200,438 L 200,372 Q 200,360 212,360 L 318,360 Q 330,360 330,348 L 330,212 Q 330,200 342,200 L 728,200 Q 740,200 740,212 L 740,226 Q 740,238 755,238" fill="none" stroke="#000000" stroke-width="7" opacity="0.4" transform="translate(1, 2)" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="routeGlow" d="M 150,450 L 188,450 Q 200,450 200,438 L 200,372 Q 200,360 212,360 L 318,360 Q 330,360 330,348 L 330,212 Q 330,200 342,200 L 728,200 Q 740,200 740,212 L 740,226 Q 740,238 755,238" fill="none" stroke="#00E5FF" stroke-width="9" opacity="0.45" filter="url(#glow)" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 150,450 L 188,450 Q 200,450 200,438 L 200,372 Q 200,360 212,360 L 318,360 Q 330,360 330,348 L 330,212 Q 330,200 342,200 L 728,200 Q 740,200 740,212 L 740,226 Q 740,238 755,238" fill="none" stroke="#0B202A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="routePath" class="animated-route" d="M 150,450 L 188,450 Q 200,450 200,438 L 200,372 Q 200,360 212,360 L 318,360 Q 330,360 330,348 L 330,212 Q 330,200 342,200 L 728,200 Q 740,200 740,212 L 740,226 Q 740,238 755,238" fill="none" stroke="url(#routeGradient)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g id="start-marker" transform="translate(150, 450)">
+    <ellipse cx="0" cy="0" rx="18" ry="8" fill="url(#pinShadow)"/>
+    <g class="marker-float" filter="url(#pinDropShadow)">
+      <path d="M 0,0 L -12,-35 C -12,-35 -15,-50 0,-52 C 15,-50 12,-35 12,-35 Z" fill="url(#startPinBody)"/>
+      <circle cx="0" cy="-55" r="18" fill="url(#startPinTop)"/>
+      <circle cx="-5" cy="-60" r="6" fill="#FFFFFF" opacity="0.45"/>
+      <text x="0" y="-49" fill="#FFFFFF" font-size="14" font-weight="900" text-anchor="middle" font-family="sans-serif">A</text>
+      <g transform="translate(0, -85)">
+        <rect x="-62" y="-13" width="124" height="24" rx="12" fill="#064E3B" stroke="#10B981" stroke-width="1.5"/>
+        <text x="0" y="3" fill="#A7F3D0" font-size="11" font-weight="bold" text-anchor="middle">NIDAROSDOMEN</text>
+      </g>
+    </g>
+  </g>
+
+  <g id="end-marker" transform="translate(755, 238)">
+    <ellipse cx="0" cy="0" rx="18" ry="8" fill="url(#pinShadow)"/>
+    <g class="marker-float-delayed" filter="url(#pinDropShadow)">
+      <path d="M 0,0 L -12,-35 C -12,-35 -15,-50 0,-52 C 15,-50 12,-35 12,-35 Z" fill="url(#endPinBody)"/>
+      <circle cx="0" cy="-55" r="18" fill="url(#endPinTop)"/>
+      <circle cx="-5" cy="-60" r="6" fill="#FFFFFF" opacity="0.45"/>
+      <text x="0" y="-49" fill="#422006" font-size="14" font-weight="900" text-anchor="middle" font-family="sans-serif">B</text>
+      <g transform="translate(0, -85)">
+        <rect x="-62" y="-13" width="124" height="24" rx="12" fill="#451A03" stroke="#EAB308" stroke-width="1.5"/>
+        <text x="0" y="3" fill="#FEF08A" font-size="11" font-weight="bold" text-anchor="middle">DEN GODE NABO</text>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(42, 60)" opacity="0.75">
+    <circle cx="0" cy="0" r="28" fill="#1E1E1E" stroke="#CC3F0C" stroke-width="1.5"/>
+    <polygon points="0,-22 6,0 0,4 -6,0" fill="#FF5722"/>
+    <polygon points="0,22 6,0 0,-4 -6,0" fill="#662C17"/>
+    <text x="0" y="-25" fill="#FF5722" font-size="9" font-weight="bold" text-anchor="middle">N</text>
+    <text x="0" y="31" fill="#888" font-size="8" font-weight="bold" text-anchor="middle">S</text>
+    <text x="26" y="3" fill="#888" font-size="8" font-weight="bold" text-anchor="middle">�</text>
+    <text x="-26" y="3" fill="#888" font-size="8" font-weight="bold" text-anchor="middle">V</text>
+  </g>
+
+  <g transform="translate(820, 650)" opacity="0.7">
+    <rect x="-10" y="-18" width="140" height="28" rx="6" fill="#1E1E1E" stroke="#444" stroke-width="1"/>
+    <line x1="0" y1="0" x2="120" y2="0" stroke="#FFF" stroke-width="2"/>
+    <line x1="0" y1="-4" x2="0" y2="4" stroke="#FFF" stroke-width="2"/>
+    <line x1="60" y1="-3" x2="60" y2="3" stroke="#FFF" stroke-width="1"/>
+    <line x1="120" y1="-4" x2="120" y2="4" stroke="#FFF" stroke-width="2"/>
+    <text x="60" y="-7" fill="#AAA" font-size="9" text-anchor="middle">1 km</text>
+  </g>
+</svg>
