@@ -73,13 +73,19 @@ Oppdaterer `rating`, `ratingCount`, `openingHours` og adresse — **ikke** `beer
 npx convex env set GOOGLE_PLACES_API_KEY <nøkkel>
 ```
 
-3. Knytt place id til barer (gjenta per sted):
+3. Knytt place id automatisk der treffet er entydig (tvetydige skrives ikke):
+
+```bash
+npx convex run placesSyncActions:resolvePlaceIds
+```
+
+Eller manuelt per sted:
 
 ```bash
 npx convex run placesSync:setGooglePlaceId '{"name":"Work-Work","googlePlaceId":"ChIJ…"}'
 ```
 
-4. Kjør sync manuelt (eller vent på ukentlig cron):
+4. Kjør sync (timer per ukedag). Re-seed overskriver ikke timer når `googlePlaceId` er satt.
 
 ```bash
 npx convex run placesSyncActions:syncAll
@@ -89,9 +95,19 @@ npx convex run placesSyncActions:syncAll
 
 ```bash
 npm run dev:frontend
+# eller begge:
+npm run dev
 ```
 
 Åpne http://localhost:3000 — **Klar for kaos** / start kvelden (uten konto).
+
+### Preview på telefon (samme Wi‑Fi)
+
+1. Finn Macens LAN-IP (`ipconfig getifaddr en0`).
+2. `next.config.ts` setter `allowedDevOrigins` automatisk fra aktive nettverksgrensesnitt — **restart** `npm run dev` etter nettverksbytte (ny IP).
+3. Åpne `http://<LAN-IP>:3000` på telefonen.
+
+Uten `allowedDevOrigins` blokkerer Next.js `/_next/*` (403) fra LAN-origin: klient-JS lastes ikke, og dekorative SVG-er / interaktiv UI mangler.
 
 ## Scripts
 

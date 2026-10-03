@@ -23,6 +23,7 @@ const barReturn = v.object({
   rating: v.optional(v.number()),
   ratingCount: v.optional(v.number()),
   openingHours: openingHoursReturn,
+  googlePlaceId: v.optional(v.string()),
   source: v.union(v.literal("curated"), v.literal("user")),
   isActive: v.boolean(),
 });
@@ -69,6 +70,7 @@ export const listActive = query({
       rating: b.rating,
       ratingCount: b.ratingCount,
       openingHours: b.openingHours,
+      googlePlaceId: b.googlePlaceId,
       source: b.source,
       isActive: b.isActive,
     }));

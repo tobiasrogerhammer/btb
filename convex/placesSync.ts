@@ -9,6 +9,46 @@ const openingHoursValidator = v.array(
   }),
 );
 
+/** Curated bars missing a place id (for one-time resolve). */
+export const listMissingPlaceId = internalQuery({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("bars"),
+      name: v.string(),
+      address: v.optional(v.string()),
+    }),
+  ),
+  handler: async (ctx) => {
+    const curated = await ctx.db
+      .query("bars")
+      .withIndex("by_source", (q) => q.eq("source", "curated"))
+      .collect();
+    return curated
+      .filter((b) => b.isActive && b.googlePlaceId == null)
+      .map((b) => ({
+        _id: b._id,
+        name: b.name,
+        address: b.address,
+      }));
+  },
+});
+
+/** Attach place id by document id. Does not touch opening hours. */
+export const setPlaceId = internalMutation({
+  args: {
+    barId: v.id("bars"),
+    googlePlaceId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const bar = await ctx.db.get(args.barId);
+    if (!bar || bar.source !== "curated") return null;
+    await ctx.db.patch(args.barId, { googlePlaceId: args.googlePlaceId });
+    return null;
+  },
+});
+
 /** Bars with a Google place id (for Places sync). */
 export const listWithPlaceId = internalQuery({
   args: {},

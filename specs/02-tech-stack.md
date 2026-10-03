@@ -79,13 +79,13 @@ bar-til-bar/
 
 ## Bar-datakilder
 
-| Felt | MVP | Neste steg (fase 1.5+) |
-|------|-----|------------------------|
-| Ølpris (`beerPrice`) | Manuelt seed (lokale prislister) | Forblir manuelt — ingen pålitelig gratis API |
-| Rating / `ratingCount` | Manuelt (f.eks. fra Google Maps) | **Google Places API (New)** Place Details |
-| Åpningstider | Seed `TYPICAL_HOURS` / kuratert | Samme Places Details (`regularOpeningHours`) |
+| Felt | Etter Places-sync (fase 1.5 spor A) | Manuelt |
+|------|--------------------------------------|---------|
+| Ølpris (`beerPrice`) | — | Alltid manuelt (seed / kurator). Sync rører det ikke |
+| Rating / `ratingCount` | Places Details | Bootstrap i seed til første sync |
+| Åpningstider | Places `regularOpeningHours` — **egen slot-liste per ukedag** | `TYPICAL_HOURS` bare til baren har `googlePlaceId` + sync |
 
-**Places-sync (fase 1.5):** `googlePlaceId` på `bars` → Convex action henter Details → cron ukentlig. Oppdaterer rating, ratingCount, openingHours, address — **ikke** `beerPrice`. Env: `GOOGLE_PLACES_API_KEY` i Convex. Scraping forblir ute (ToS/skjørhet). OSM/Yelp forkastet for MVP (svak rating/pris-dekning i NO).
+**Places-sync (fase 1.5, nå):** `googlePlaceId` → Details → ukentlig cron. Skriver `openingHours`, rating, `ratingCount`, adresse. **Ikke** `beerPrice`. Re-seed må ikke skrive tilbake `TYPICAL_HOURS` når `googlePlaceId` finnes. Env: `GOOGLE_PLACES_API_KEY`. Scraping forblir ute. `currentOpeningHours` (helligdager / «stengt i dag») er ikke i spor A.
 
 ## Avhengigheter vi bevisst utsetter
 

@@ -97,17 +97,7 @@ const SEED_BARS: Array<{
     ratingCount: 41,
   },
   {
-    name: "Smulen",
-    address: "Fjordgata 24, Trondheim",
-    lat: 63.4339,
-    lng: 10.3956,
-    priceLevel: 1,
-    beerPrice: 95,
-    rating: 4.0,
-    ratingCount: 143,
-  },
-  {
-    name: "Bar 3B",
+    name: "Carpe Diem Vinbar",
     address: "Brattørgata 3B, Trondheim",
     lat: 63.4346,
     lng: 10.399,
@@ -115,6 +105,8 @@ const SEED_BARS: Array<{
     beerPrice: 110,
     rating: 4.1,
     ratingCount: 176,
+    aliases: ["Bar 3B"],
+    googlePlaceId: "ChIJPUYQGAAxbUYRPazmc75KW1A",
   },
   {
     name: "Kos",
@@ -429,6 +421,25 @@ function seedFields(seed: (typeof SEED_BARS)[number]) {
   };
 }
 
+/** Re-seed must not wipe Places-synced hours, rating, or address. */
+function seedPatchForExisting(
+  seed: (typeof SEED_BARS)[number],
+  hasGooglePlaceId: boolean,
+) {
+  if (!hasGooglePlaceId) return seedFields(seed);
+  return {
+    name: seed.name,
+    lat: seed.lat,
+    lng: seed.lng,
+    priceLevel: seed.priceLevel,
+    beerPrice: seed.beerPrice,
+    isActive: true as const,
+    ...(seed.googlePlaceId != null
+      ? { googlePlaceId: seed.googlePlaceId }
+      : {}),
+  };
+}
+
 const GENERIC_CHALLENGES = [
   "Si hei til en fremmed og spør hva favorittbaren deres er",
   "Bytt drikke med noen i laget i tre slurker (æresystem)",
@@ -464,6 +475,13 @@ export const seedDatabase = mutation({
       }
 
       const byName = new Map(existing.map((b) => [b.name, b]));
+      // Soft-hide retired curated bars removed from seed
+      for (const retired of ["Smulen"]) {
+        const retiredBar = byName.get(retired);
+        if (retiredBar?.isActive) {
+          await ctx.db.patch(retiredBar._id, { isActive: false });
+        }
+      }
       let inserted = 0;
       let updated = 0;
       for (const seed of SEED_BARS) {
@@ -472,7 +490,10 @@ export const seedDatabase = mutation({
           .find((b) => b != null);
         const bar = byName.get(seed.name) ?? aliasHit;
         if (bar) {
-          await ctx.db.patch(bar._id, seedFields(seed));
+          await ctx.db.patch(bar._id, {
+            ...seedPatchForExisting(seed, bar.googlePlaceId != null),
+            name: seed.name,
+          });
           byName.set(seed.name, bar);
           updated++;
         } else {

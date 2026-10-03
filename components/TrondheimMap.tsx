@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useInlineSvg } from "@/lib/useInlineSvg";
 
 /** Trondheim map hero — used above the route builder (with fade) or standalone. */
 export function TrondheimMap({
@@ -10,19 +10,7 @@ export function TrondheimMap({
   className?: string;
   fadeIntoSurface?: boolean;
 }) {
-  const [svg, setSvg] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetch("/map-hero.svg")
-      .then((r) => r.text())
-      .then((text) => {
-        if (!cancelled) setSvg(text);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { hostRef, ready } = useInlineSvg("/map-hero.svg");
 
   return (
     <div
@@ -31,17 +19,15 @@ export function TrondheimMap({
       } ${className}`}
       aria-hidden="true"
     >
-      {svg ? (
-        <div
-          className="map-hero pointer-events-none select-none [&_svg]:block [&_svg]:h-auto [&_svg]:w-full"
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
-      ) : (
-        <div className="aspect-[10/7] w-full bg-[#121212]" />
-      )}
+      <div className="map-hero pointer-events-none select-none aspect-[10/7] w-full bg-[#121212] [&_svg]:block [&_svg]:h-auto [&_svg]:w-full [&_img]:block [&_img]:h-auto [&_img]:w-full">
+        <div ref={hostRef} className={ready ? "contents" : "hidden"} />
+        {!ready && (
+          <img src="/map-hero.svg" alt="" width={1000} height={700} />
+        )}
+      </div>
       {fadeIntoSurface && (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent via-[var(--surface)]/40 to-[var(--surface)]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent via-[var(--bg)]/40 to-[var(--bg)]"
           aria-hidden
         />
       )}

@@ -2,7 +2,7 @@
 
 Utvikling skjer i faser. **Ikke start neste fase før fase-mål er møtt**, med mindre spec eksplisitt endres.
 
-## Fase 0 — Blueprint (nå)
+## Fase 0 — Blueprint
 
 - [x] Produktkonsept dokumentert
 - [x] Tech-valg låst (Next.js + Convex)
@@ -24,22 +24,40 @@ Utvikling skjer i faser. **Ikke start neste fase før fase-mål er møtt**, med 
 5. [x] `suggestRoute` + ruteestimat
 6. [x] UI: landing, gjesteflyt, builder, aktiv runde, recap, auth
 7. [x] Rute-options: maks ølpris, min. rating, tidsvindu (filter suggest + katalog)
-8. [ ] Smoke-test mot akseptansekriterier i [04-features.md](04-features.md)
+8. [x] Smoke-test utsatt — fase lukket uten at alle punkter i [04-features.md](04-features.md) er huket av
 
-**Exit:** Akseptansekriterier i features-spec er huket av.
+**Exit:** Solo-MVP er i bruk som grunnlag. ✅ (2026-09-29). Akseptansekriterier i features-spec er restgjeld, ikke blocker for 1.5.
 
-## Fase 1.5 — Stopptid, «gå videre» og Places-sync
+## Fase 1.5 — Åpningstider, deretter stopptid (nå)
 
-Etter solo-MVP, før eller parallelt med gruppe:
+To spor. **Nå:** korrekte åpningstider per ukedag. **Senere i samme fase:** ønsket minutter per stopp, `moveOnAt`, in-app «gå videre». Push venter til fase 4.
+
+### Spor A — Åpningstider per ukedag (nåværende arbeid)
+
+Mål: hver **kuratert** bar har `openingHours` fra Google Places `regularOpeningHours` — egne slots **man–søn**, ikke felles `TYPICAL_HOURS`. Filter, forslag og «Åpner snart» / «Stenger snart» bruker disse slotene. `beerPrice` forblir manuell.
+
+Kilde: **ukentlig timeplan**, ikke «åpen akkurat dette minuttet» (`currentOpeningHours` / helligdager er utenfor dette sporet).
+
+Allerede i kode: `googlePlaceId`, `placesSync` / `placesSyncActions`, ukentlig cron. **Ikke** gjort: place-id på barene, og seed overskriver `openingHours` med `TYPICAL_HOURS` ved hver `seedDatabase`.
+
+Implementeringsrekkefølge:
+
+1. **Seed-vern.** Re-seed patcher ikke `openingHours` (eller rating/adresse) på en bar som allerede har `googlePlaceId`. Nye barer uten id får fortsatt `TYPICAL_HOURS` som midlertidig bootstrap.
+2. **API-nøkkel.** `GOOGLE_PLACES_API_KEY` i Convex; Places API (New) slått på.
+3. **Place-id, én gang.** Action: tekstsøk `navn + adresse + Trondheim` → foreslå `googlePlaceId`. Tvetydige treff logges og settes **ikke** automatisk. Kurator bekrefter før sync.
+4. **Details-sync.** `regularOpeningHours.periods` → én slot per periode (`day` = åpningsdag, `open`/`close` `HH:mm`). Flere perioder samme dag beholdes. Overnight (`close` neste dag) følger regelen i [03-data-model.md](03-data-model.md). Rører ikke `beerPrice`.
+5. **Kjør sync** (`placesSyncActions:syncAll`). Cron (mandag) holder planen oppdatert.
+6. **Sjekk.** Minst ett sted med ulik åpning mandag vs. lørdag; tidsvindu på den ukedagen bruker **den** dagens slot (ikke felles 16:00–01:00).
+
+**Exit spor A:** alle aktive kuraterte barer har `googlePlaceId` og minst én slot per ukedag der Google har åpent; ingen av dem står igjen på bare `TYPICAL_HOURS`.
+
+### Spor B — Stopptid (etter spor A)
 
 - Bruker setter ønsket minutter per stopp (`stopDwellMinutes`)
 - Ved check-in: `moveOnAt` på stopp-logg
 - In-app nedtelling / «på tide å gå videre»
-- Push-varsler når PWA/native er aktuelt (se fase 4)
-- [x] **Google Places sync scaffolding:** `googlePlaceId`, `placesSync` + ukentlig cron (krever API-nøkkel + place ids)
-- Oppdater features/data-model hvis detaljer endres under implementasjon
 
-**Exit:** Bruker kan styre opphold per stopp; bar-rating/timer kan synces fra Places.
+**Exit fase 1.5:** spor A + bruker kan styre opphold per stopp.
 
 ## Fase 2 — Gruppe
 
@@ -96,3 +114,7 @@ Etter solo-MVP, før eller parallelt med gruppe:
 | 2026-09-27 | Bar-data: manuelt beerPrice; Places API for rating/timer i fase 1.5 |
 | 2026-09-27 | UI: øvinger → utfordringer; fullfør = «Vi overlevde»; recap «Gi kvelden et navn»; bort fra school-tema |
 | 2026-09-27 | «Ta et emne» → Start kvelden; «Mine emner» → Mine kvelder |
+| 2026-09-29 | Soft filter: katalog alltid synlig; mismatch → confirm; rute-stopp med tidlig stenging → varselsbakgrunn + «Stenger HH:mm»; forslag prefererer fortsatt full vindu-dekning |
+| 2026-09-29 | Tidsvindu-default: nå (Oslo) → +5 timer (ikke fast 20–02) |
+| 2026-09-29 | Fase 1 lukket (smoke-test = restgjeld). Fase 1.5 startet: spor A = Places-åpningstider per ukedag før stopptid |
+| 2026-09-29 | Suggest: smart ruteorden etter åpningstid når ikke alle stopp er åpne i hele tidsvinduet |

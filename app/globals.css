@@ -24,10 +24,70 @@ body {
   font-family: var(--font-body), system-ui, sans-serif;
 }
 
+/* Ølpris-range: brand-oransje fyll + tynn thumb-kant */
+.beer-price-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  accent-color: var(--brand);
+}
+
+.beer-price-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--brand) 0%,
+    var(--brand) var(--beer-price-pct, 100%),
+    rgba(255, 255, 255, 0.12) var(--beer-price-pct, 100%),
+    rgba(255, 255, 255, 0.12) 100%
+  );
+}
+
+.beer-price-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--brand);
+  box-shadow: none;
+}
+
+.beer-price-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--brand) 0%,
+    var(--brand) var(--beer-price-pct, 100%),
+    rgba(255, 255, 255, 0.12) var(--beer-price-pct, 100%),
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  border: none;
+}
+
+.beer-price-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--brand);
+}
+
+.beer-price-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--brand);
+  box-shadow: none;
+}
+
 .map-hero svg {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
 }
 
 .map-hero .animated-route {
@@ -41,6 +101,78 @@ body {
 
 .map-hero .marker-float-delayed {
   animation: map-pin-float 3s ease-in-out 1.5s infinite;
+}
+
+/* Landing bar-scene — CSS utenfor SVG (Safari stripper ofte <style> i injisert SVG) */
+.bar-scene-svg .beer-stream,
+.bar-scene-svg #beerStream,
+.bar-scene-svg .animate-pulse {
+  animation: beer-pulse 1.6s ease-in-out infinite;
+}
+
+.bar-scene-svg .bubble-1,
+.bar-scene-svg .bubble-2,
+.bar-scene-svg .bubble-3,
+.bar-scene-svg .bubble-4 {
+  animation: bubble-rise 2.4s ease-in-out infinite;
+}
+
+.bar-scene-svg .bubble-2 {
+  animation-delay: 0.4s;
+}
+
+.bar-scene-svg .bubble-3 {
+  animation-delay: 0.8s;
+}
+
+.bar-scene-svg .bubble-4 {
+  animation-delay: 1.2s;
+}
+
+.bar-scene-svg .note-1,
+.bar-scene-svg .note-2,
+.bar-scene-svg .note-3 {
+  animation: note-float 3s ease-in-out infinite;
+}
+
+.bar-scene-svg .note-2 {
+  animation-delay: 0.6s;
+}
+
+.bar-scene-svg .note-3 {
+  animation-delay: 1.2s;
+}
+
+@keyframes beer-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes bubble-rise {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes note-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
 }
 
 @keyframes map-route-dash {
@@ -250,6 +382,16 @@ body {
   .map-hero .animated-route,
   .map-hero .marker-float,
   .map-hero .marker-float-delayed,
+  .bar-scene-svg .beer-stream,
+  .bar-scene-svg #beerStream,
+  .bar-scene-svg .animate-pulse,
+  .bar-scene-svg .bubble-1,
+  .bar-scene-svg .bubble-2,
+  .bar-scene-svg .bubble-3,
+  .bar-scene-svg .bubble-4,
+  .bar-scene-svg .note-1,
+  .bar-scene-svg .note-2,
+  .bar-scene-svg .note-3,
   .chaos-cta,
   .chaos-cta__spin,
   .chaos-cta__sheen,

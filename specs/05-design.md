@@ -82,18 +82,21 @@ Etter forslag eller under manuell bygging (`/routes/new`):
 │ [Kart SVG]              │  ← Trondheim-kart (`public/map-hero.svg`)
 ├─────────────────────────┤
 │ Din rute · estimat [⚙][↻]│  ← Options + Ny rute
-│ ≤ 110 kr · ≥ 4.0 · 20–02 │  ← aktive filtre (hvis satt)
-│ ≡  Bar A           [×]  │
-│ ≡  Bar B           [×]  │
-│ ≡  Bar C           [×]  │
-│      [ −  N  + ]        │
-│ ── Andre stopp ─────    │
-│ [Start kvelden]         │
+│ Fre 20–01 · (evt. maks/rating) │  ← alltid filter-oppsummering (inkl. default dag/tid)
+│ ≡  Bar A               [×]│
+│    ★ · øl · ⚠ 16–01       │  ← åpningstid i varselfarge + varsel-ikon ved mismatch
+│ ≡  Bar B               [×]  │
+│      [ −  N  + ]            │
+│ ── Andre stopp ─────        │  ← hele katalogen; mismatch → bekreft
+│ [Start kvelden]             │
 └─────────────────────────┘
 ```
 
-- Kart over listen: dekorativ Trondheim-SVG, ikke interaktiv; myk fade inn i «Din rute».
-- **Options** (Lucide `SlidersHorizontal`) ved siden av «Ny rute»: inline panel/sheet med maks ølpris, min. rating, tidsvindu — norsk copy, samme surface som listen.
+- Kart over listen: dekorativ Trondheim-SVG, ikke interaktiv; myk fade inn i sidebakgrunn (`--bg`). Innhold under kartet uten egen surface-boks.
+- **Options** (Lucide `SlidersHorizontal`) ved siden av «Ny rute»: inline panel uten egen boks/border; maks ølpris, min. rating, **uten-dag** (`<select>`-dropdown, man–søn, default = dagens ukedag i Oslo), tidsvindu (fra–til) — norsk copy.
+- Stopp-rad i «Din rute»: flat liste med **separatorer** (ikke egne bokser). **Navn**; under: rating, ølpris, åpningstid. Ved mismatch: åpningstid i amber + Lucide `AlertTriangle`.
+- **Populære ruter:** popup-meny over knappen (ikke inline-liste); lukkes ved valg / klikk utenfor.
+- Katalog («Alle stopp»): samme rad-layout som «Din rute» (navn; under: rating, ølpris, åpningstid). Delvis mismatch → amber + `AlertTriangle`; **helt utenfor** tidsvindu → **rød** åpningstid + `AlertTriangle`. Bekreftelsesdialog ved add som bryter pris/rating/åpningstid.
 - Rekkefølge: drag-handle (Lucide `GripVertical`) og/eller opp/ned for tilgjengelighet.
 - Fjern: tydelig, tommelvennlig — ikke gjemt i swipe-only.
 - Estimat i «Din rute»-header oppdateres live.
@@ -137,6 +140,14 @@ Hovedskjerm under bruk (`/routes/[instanceId]`):
 - Én headline + én setning + CTA (**«Klar for kaos»** — uten login-krav).
 - Visuell anker: bar-scene SVG (`public/bar-scene.svg`), ikke kart.
 - Ingen kort-grid, ingen feature-stat-strips i første viewport.
+
+## Dekorative SVG-er (kart + bar-scene)
+
+- **Kart** (`map-hero.svg`) over rutebygger og **bar-scene** på landing er visuelle ankre — de skal synes på mobil (inkl. preview via LAN-IP), ikke bare desktop/`localhost`.
+- Kart-animasjoner (rute-dash, pin-float) drives av CSS i `globals.css` på **inline** SVG i DOM (ikke `<img>` — da treffer ikke klassene).
+- Bar-scene-animasjoner (bobler, øl, noter) likeså via CSS i `globals.css` (ikke stol kun på `<style>` inne i SVG-filen).
+- **Rendering:** bar-scene server-rendres inline (første HTML-paint uten klient-JS). Kart monteres klient-side, men krever at Next.js tillater LAN-origin i dev (`allowedDevOrigins`) — ellers 403 på `/_next/*` og React hydrerer ikke.
+- Respekter `prefers-reduced-motion: reduce` (statisk bilde OK; animasjon av).
 
 ## Tilgjengelighet (minimum)
 

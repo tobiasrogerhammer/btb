@@ -8,38 +8,10 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AppShell, PrimaryButton } from "@/components/ui";
 import { useGuest } from "@/components/GuestProvider";
+import { formatHoursForNow } from "@/convex/lib/geo";
+import { mapsPlaceUrl } from "@/lib/maps";
 
 const MAX_SUGGESTED_CHALLENGES = 3;
-
-type OpeningSlot = { day: number; open: string; close: string };
-
-/** Ukedag 0=søn … 6=lør i Europe/Oslo. */
-function osloWeekday(now: number): number {
-  const weekday = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Europe/Oslo",
-    weekday: "short",
-  }).format(new Date(now));
-  const map: Record<string, number> = {
-    Sun: 0,
-    Mon: 1,
-    Tue: 2,
-    Wed: 3,
-    Thu: 4,
-    Fri: 5,
-    Sat: 6,
-  };
-  return map[weekday] ?? 0;
-}
-
-function formatTodayHours(
-  openingHours: OpeningSlot[] | undefined,
-  now: number,
-): string | null {
-  if (!openingHours || openingHours.length === 0) return null;
-  const slots = openingHours.filter((h) => h.day === osloWeekday(now));
-  if (slots.length === 0) return "Stengt i dag";
-  return slots.map((s) => `${s.open}–${s.close}`).join(", ");
-}
 
 function formatElapsed(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -52,8 +24,8 @@ function formatElapsed(ms: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-/** Google Maps–stil veibeskrivelse (skrå firkant med svingpil). */
-function MapsDirectionsIcon({ className }: { className?: string }) {
+/** Google Maps–stil sted-ikon (skrå firkant med svingpil). */
+function MapsPlaceIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -64,19 +36,6 @@ function MapsDirectionsIcon({ className }: { className?: string }) {
       <path d="M21.71 11.29 12.71 2.29a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39 1.02.39 1.41 0l9-9a.996.996 0 0 0 0-1.41M14 14.5V12h-4v3H8v-4c0-.55.45-1 1-1h5V7.5L17.5 11z" />
     </svg>
   );
-}
-
-function mapsDirectionsUrl(bar: {
-  name: string;
-  address?: string;
-  lat?: number;
-  lng?: number;
-}): string {
-  if (bar.lat != null && bar.lng != null) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${bar.lat},${bar.lng}`;
-  }
-  const q = bar.address?.trim() || `${bar.name} Trondheim`;
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}`;
 }
 
 type ChallengeRow = {
@@ -213,7 +172,7 @@ export default function ActiveRoutePage() {
       ? pickChallengesForStop(challenges, bar._id)
       : [];
   const hoursLabel = bar
-    ? formatTodayHours(bar.openingHours, now)
+    ? formatHoursForNow(bar.openingHours, now)
     : null;
 
   async function onCheckIn() {
@@ -473,17 +432,17 @@ export default function ActiveRoutePage() {
                 )}
               </div>
               <a
-                href={mapsDirectionsUrl(bar)}
+                href={mapsPlaceUrl(bar)}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`Veibeskrivelse til ${bar.name}`}
+                aria-label={`Vis ${bar.name} i Google Maps`}
                 className={`inline-flex size-10 shrink-0 items-center justify-center rounded-md transition ${
                   log
                     ? "text-white hover:bg-white/15"
                     : "text-[var(--muted)] hover:bg-white/5 hover:text-[var(--brand)]"
                 }`}
               >
-                <MapsDirectionsIcon className="size-6" />
+                <MapsPlaceIcon className="size-6" />
               </a>
             </div>
             {!log ? (

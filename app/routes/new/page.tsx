@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   ChevronDown,
+  Clock,
   GripVertical,
   Info,
   Minus,
@@ -25,7 +27,14 @@ import {
   RatingFilter,
   thresholdToMinRating,
 } from "@/components/RatingFilter";
-import { isOpenDuringWindow } from "@/convex/lib/geo";
+import {
+  formatHoursForNow,
+  hoursWarningForWindow,
+  isOpenAtAnyDuringWindow,
+  nextOsloYmdForWeekday,
+  osloDayAndMinutes,
+} from "@/convex/lib/geo";
+import { mapsPlaceUrl } from "@/lib/maps";
 
 function formatDuration(minutes: number): string {
   const total = Math.max(0, Math.round(minutes / 5) * 5);
@@ -36,8 +45,7 @@ function formatDuration(minutes: number): string {
   return `ca. ${hours} t ${mins} min`;
 }
 
-/** Google Maps–stil veibeskrivelse (skrå firkant med svingpil). */
-function MapsDirectionsIcon({ className }: { className?: string }) {
+function MapsPlaceIcon({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -50,37 +58,21 @@ function MapsDirectionsIcon({ className }: { className?: string }) {
   );
 }
 
-function mapsDirectionsUrl(bar: {
-  name: string;
-  address?: string;
-  lat?: number;
-  lng?: number;
-}): string {
-  if (bar.lat != null && bar.lng != null) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${bar.lat},${bar.lng}`;
-  }
-  const q = bar.address?.trim() || `${bar.name} Trondheim`;
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}`;
-}
-
 const BEER_PRICE_MIN = 75;
 const BEER_PRICE_MAX = 150;
 const BEER_PRICE_STEP = 5;
 
-/** Local calendar Y-M-D in Europe/Oslo for a given instant. */
-function osloYmd(fromMs: number): { y: number; m: number; d: number } {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Oslo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date(fromMs));
-  return {
-    y: Number(parts.find((p) => p.type === "year")?.value),
-    m: Number(parts.find((p) => p.type === "month")?.value),
-    d: Number(parts.find((p) => p.type === "day")?.value),
-  };
-}
+/** Mandag → søndag for dropdown (value = 0=søn … 6=lør). */
+const OUTING_WEEKDAY_OPTIONS: { value: number; label: string; short: string }[] =
+  [
+    { value: 1, label: "Mandag", short: "Man" },
+    { value: 2, label: "Tirsdag", short: "Tir" },
+    { value: 3, label: "Onsdag", short: "Ons" },
+    { value: 4, label: "Torsdag", short: "Tor" },
+    { value: 5, label: "Fredag", short: "Fre" },
+    { value: 6, label: "Lørdag", short: "Lør" },
+    { value: 0, label: "Søndag", short: "Søn" },
+  ];
 
 /** Epoch ms for Y-M-D HH:mm interpreted in Europe/Oslo. */
 function osloWallTimeToUtc(
@@ -120,17 +112,31 @@ function parseHm(hm: string): { hour: number; minute: number } {
   return { hour: h ?? 0, minute: m ?? 0 };
 }
 
-/** Window [start, end) as epoch ms from HH:mm; overnight if end ≤ start. */
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/** Default tidsvindu: nå (Oslo) → nå + 5 timer (overnight hvis over midnatt). */
+function defaultTimeWindowHm(fromMs: number): { startHm: string; endHm: string } {
+  const { mins } = osloDayAndMinutes(fromMs);
+  const endMins = (mins + 5 * 60) % (24 * 60);
+  const toHm = (total: number) =>
+    `${pad2(Math.floor(total / 60))}:${pad2(total % 60)}`;
+  return { startHm: toHm(mins), endHm: toHm(endMins) };
+}
+
+/** Window [start, end) as epoch ms; overnight if end ≤ start on outing Y-M-D. */
 function windowFromHm(
   startHm: string,
   endHm: string,
-  fromMs: number,
+  outing: { y: number; m: number; d: number },
 ): { windowStart: number; windowEnd: number } {
-  const { y, m, d } = osloYmd(fromMs);
+  const { y, m, d } = outing;
   const s = parseHm(startHm);
   const e = parseHm(endHm);
   const windowStart = osloWallTimeToUtc(y, m, d, s.hour, s.minute);
-  const endDay = e.hour * 60 + e.minute <= s.hour * 60 + s.minute ? d + 1 : d;
+  const endDay =
+    e.hour * 60 + e.minute <= s.hour * 60 + s.minute ? d + 1 : d;
   const windowEnd = osloWallTimeToUtc(y, m, endDay, e.hour, e.minute);
   return { windowStart, windowEnd };
 }
@@ -141,7 +147,7 @@ const POPULAR_ROUTES: { id: string; name: string; blurb: string; barNames: strin
     id: "bakklandet",
     name: "Bakklandet",
     blurb: "Broer, brygger og god stemning",
-    barNames: ["Den Gode Nabo", "Antikvariatet", "Bodegaen", "Smulen"],
+    barNames: ["Den Gode Nabo", "Antikvariatet", "Bodegaen", "Café Løkka"],
   },
   {
     id: "solsiden",
@@ -153,7 +159,7 @@ const POPULAR_ROUTES: { id: string; name: string; blurb: string; barNames: strin
     id: "sentrum",
     name: "Sentrum-sløyfe",
     blurb: "Kort mellom stoppene",
-    barNames: ["Kos", "Smulen", "Bodegaen", "Studentersamfundet"],
+    barNames: ["Kos", "Antikvariatet", "Bodegaen", "Studentersamfundet"],
   },
 ];
 
@@ -178,12 +184,26 @@ export default function NewRoutePage() {
   const [showOptions, setShowOptions] = useState(false);
   const [maxBeerPrice, setMaxBeerPrice] = useState(BEER_PRICE_MAX);
   const [minRating, setMinRating] = useState<number | null>(null);
-  const [windowStartHm, setWindowStartHm] = useState("20:00");
-  const [windowEndHm, setWindowEndHm] = useState("02:00");
+  const [outingWeekday, setOutingWeekday] = useState(
+    () => osloDayAndMinutes(Date.now()).day,
+  );
+  const [windowDefaults] = useState(() => defaultTimeWindowHm(Date.now()));
+  const [windowStartHm, setWindowStartHm] = useState(windowDefaults.startHm);
+  const [windowEndHm, setWindowEndHm] = useState(windowDefaults.endHm);
+  const [pendingAdd, setPendingAdd] = useState<{
+    id: Id<"bars">;
+    name: string;
+    reasons: string[];
+  } | null>(null);
+
+  const outingYmd = useMemo(
+    () => nextOsloYmdForWeekday(now, outingWeekday),
+    [now, outingWeekday],
+  );
 
   const timeWindow = useMemo(
-    () => windowFromHm(windowStartHm, windowEndHm, now),
-    [windowStartHm, windowEndHm, now],
+    () => windowFromHm(windowStartHm, windowEndHm, outingYmd),
+    [windowStartHm, windowEndHm, outingYmd],
   );
 
   const suggestArgs = useMemo(
@@ -207,18 +227,42 @@ export default function NewRoutePage() {
 
   const suggestion = useQuery(api.routes.suggest, suggestArgs);
 
-  const activeFilterLabel = useMemo(() => {
+  const filterSummary = useMemo(() => {
     const parts: string[] = [];
-    if (maxBeerPrice < BEER_PRICE_MAX) parts.push(`≤ ${maxBeerPrice} kr`);
+    if (maxBeerPrice < BEER_PRICE_MAX) parts.push(`Maks ${maxBeerPrice} kr`);
+    if (minRating != null) {
+      parts.push(`${minRating.toFixed(1).replace(".", ",")}+`);
+    }
     const fmt = (hm: string) => {
       const [h, m] = hm.split(":");
       return m === "00" ? String(Number(h)) : `${Number(h)}:${m}`;
     };
-    if (windowStartHm !== "20:00" || windowEndHm !== "02:00") {
-      parts.push(`${fmt(windowStartHm)}–${fmt(windowEndHm)}`);
-    }
-    return parts.length > 0 ? parts.join(" · ") : null;
-  }, [maxBeerPrice, windowStartHm, windowEndHm]);
+    const dayShort =
+      OUTING_WEEKDAY_OPTIONS.find((o) => o.value === outingWeekday)?.short ??
+      "";
+    parts.push(`${dayShort} ${fmt(windowStartHm)}–${fmt(windowEndHm)}`);
+    return parts.join(" · ");
+  }, [maxBeerPrice, minRating, outingWeekday, windowEndHm, windowStartHm]);
+
+  const hasCustomFilters = useMemo(() => {
+    const todayWeekday = osloDayAndMinutes(now).day;
+    return (
+      maxBeerPrice < BEER_PRICE_MAX ||
+      minRating != null ||
+      windowStartHm !== windowDefaults.startHm ||
+      windowEndHm !== windowDefaults.endHm ||
+      outingWeekday !== todayWeekday
+    );
+  }, [
+    maxBeerPrice,
+    minRating,
+    now,
+    outingWeekday,
+    windowDefaults.endHm,
+    windowDefaults.startHm,
+    windowEndHm,
+    windowStartHm,
+  ]);
 
   useEffect(() => {
     void ensureGuest();
@@ -248,32 +292,16 @@ export default function NewRoutePage() {
 
   const loadingRoute = suggestion === undefined && !manualEdit;
 
-  /** Valgte stopp først (i rute-rekkefølge), resten etterpå — filtert. */
+  /** Valgte stopp først (i rute-rekkefølge), deretter hele resten av katalogen. */
   const catalogBars = useMemo(() => {
     if (!bars) return [];
     const selectedSet = new Set(barIds);
     const selected = barIds
       .map((id) => bars.find((b) => b._id === id))
       .filter((b): b is (typeof bars)[number] => b != null);
-    const rest = bars.filter((b) => {
-      if (selectedSet.has(b._id)) return false;
-      if (b.beerPrice == null || b.beerPrice > maxBeerPrice) return false;
-      if (minRating != null) {
-        if (b.rating == null || b.rating < minRating) return false;
-      }
-      if (
-        !isOpenDuringWindow(
-          b.openingHours,
-          timeWindow.windowStart,
-          timeWindow.windowEnd,
-        )
-      ) {
-        return false;
-      }
-      return true;
-    });
+    const rest = bars.filter((b) => !selectedSet.has(b._id));
     return [...selected, ...rest];
-  }, [bars, barIds, maxBeerPrice, minRating, timeWindow]);
+  }, [bars, barIds]);
 
   // Filters change → drop manual lock so suggest re-applies
   useEffect(() => {
@@ -285,6 +313,52 @@ export default function NewRoutePage() {
   const ordered = barIds
     .map((id) => selectedBars.find((b) => b._id === id))
     .filter(Boolean) as NonNullable<(typeof selectedBars)[number]>[];
+
+  function filterMismatchReasons(bar: {
+    beerPrice?: number;
+    rating?: number;
+    openingHours?: Array<{ day: number; open: string; close: string }>;
+  }): string[] {
+    const reasons: string[] = [];
+    if (bar.beerPrice != null && bar.beerPrice > maxBeerPrice) {
+      reasons.push("ølpris");
+    } else if (maxBeerPrice < BEER_PRICE_MAX && bar.beerPrice == null) {
+      reasons.push("ølpris");
+    }
+    if (minRating != null && (bar.rating == null || bar.rating < minRating)) {
+      reasons.push("rating");
+    }
+    if (
+      !isOpenAtAnyDuringWindow(
+        bar.openingHours,
+        timeWindow.windowStart,
+        timeWindow.windowEnd,
+      )
+    ) {
+      reasons.push("åpningstid");
+    }
+    return reasons;
+  }
+
+  function hoursWarningForBar(bar: {
+    openingHours?: Array<{ day: number; open: string; close: string }>;
+  }): string | null {
+    return hoursWarningForWindow(
+      bar.openingHours,
+      timeWindow.windowStart,
+      timeWindow.windowEnd,
+    );
+  }
+
+  function addBar(id: Id<"bars">) {
+    if (barIds.includes(id)) return;
+    const next = [...barIds, id];
+    setBarIds(next);
+    setStopCount(next.length);
+    setManualEdit(true);
+    setLastEstimateMinutes(null);
+    setUsedSuggest(false);
+  }
 
   function adjustStops(delta: number) {
     const next = Math.min(12, Math.max(2, barIds.length + delta));
@@ -328,14 +402,23 @@ export default function NewRoutePage() {
   }
 
   function toggleBar(id: Id<"bars">) {
-    const next = barIds.includes(id)
-      ? barIds.filter((x) => x !== id)
-      : [...barIds, id];
-    setBarIds(next);
-    setStopCount(next.length);
-    setManualEdit(true);
-    setLastEstimateMinutes(null);
-    setUsedSuggest(false);
+    if (barIds.includes(id)) {
+      const next = barIds.filter((x) => x !== id);
+      setBarIds(next);
+      setStopCount(next.length);
+      setManualEdit(true);
+      setLastEstimateMinutes(null);
+      setUsedSuggest(false);
+      return;
+    }
+    const bar = bars?.find((b) => b._id === id);
+    if (!bar) return;
+    const reasons = filterMismatchReasons(bar);
+    if (reasons.length > 0) {
+      setPendingAdd({ id, name: bar.name, reasons });
+      return;
+    }
+    addBar(id);
   }
 
   function applyPopular(preset: (typeof POPULAR_ROUTES)[number]) {
@@ -388,7 +471,7 @@ export default function NewRoutePage() {
       <div className="relative mt-2">
         <TrondheimMap fadeIntoSurface />
 
-        <div className="relative z-10 -mt-12 rounded-xl bg-[var(--surface)] p-3">
+        <div className="relative z-10 -mt-6 px-0.5 pt-2">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-[var(--text)]">
             Din rute
@@ -415,7 +498,7 @@ export default function NewRoutePage() {
               aria-controls="route-options"
               aria-label="Options"
               className={`inline-flex size-8 items-center justify-center rounded-lg border transition ${
-                showOptions || activeFilterLabel
+                showOptions || hasCustomFilters
                   ? "border-[var(--brand)]/50 text-[var(--brand)]"
                   : "border-white/10 text-[var(--text)] hover:border-[var(--brand)]/50"
               }`}
@@ -425,14 +508,12 @@ export default function NewRoutePage() {
           </div>
         </div>
 
-        {activeFilterLabel && (
-          <p className="mb-2 text-xs text-[var(--muted)]">{activeFilterLabel}</p>
-        )}
+        <p className="mb-2 text-xs text-[var(--muted)]">{filterSummary}</p>
 
         {showOptions && (
           <div
             id="route-options"
-            className="mb-3 space-y-3 rounded-lg border border-white/10 bg-black/25 px-3 py-3"
+            className="mb-3 space-y-3 py-1"
           >
             <div>
               <p className="mb-1.5 text-xs text-[var(--text)]">Min. rating</p>
@@ -460,7 +541,16 @@ export default function NewRoutePage() {
                   step={BEER_PRICE_STEP}
                   value={maxBeerPrice}
                   onChange={(e) => setMaxBeerPrice(Number(e.target.value))}
-                  className="h-1.5 w-full accent-[var(--brand)]"
+                  style={
+                    {
+                      "--beer-price-pct": `${
+                        ((maxBeerPrice - BEER_PRICE_MIN) /
+                          (BEER_PRICE_MAX - BEER_PRICE_MIN)) *
+                        100
+                      }%`,
+                    } as CSSProperties
+                  }
+                  className="beer-price-slider h-1.5 w-full"
                 />
                 <span className="w-14 shrink-0 text-right text-xs tabular-nums text-[var(--text)]">
                   {maxBeerPrice} kr
@@ -471,6 +561,21 @@ export default function NewRoutePage() {
             <div>
               <p className="mb-1.5 text-xs text-[var(--text)]">Tidsvindu</p>
               <div className="flex items-center gap-2">
+                <label className="sr-only" htmlFor="outing-weekday">
+                  Når skal du ut?
+                </label>
+                <select
+                  id="outing-weekday"
+                  value={outingWeekday}
+                  onChange={(e) => setOutingWeekday(Number(e.target.value))}
+                  className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-[var(--text)]"
+                >
+                  {OUTING_WEEKDAY_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
                 <label className="sr-only" htmlFor="window-start">
                   Fra
                 </label>
@@ -479,7 +584,7 @@ export default function NewRoutePage() {
                   type="time"
                   value={windowStartHm}
                   onChange={(e) => setWindowStartHm(e.target.value)}
-                  className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-[var(--text)]"
+                  className="shrink-0 rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-[var(--text)]"
                 />
                 <span className="text-xs text-[var(--muted)]">–</span>
                 <label className="sr-only" htmlFor="window-end">
@@ -490,11 +595,18 @@ export default function NewRoutePage() {
                   type="time"
                   value={windowEndHm}
                   onChange={(e) => setWindowEndHm(e.target.value)}
-                  className="rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-[var(--text)]"
+                  className="shrink-0 rounded-md border border-white/10 bg-black/30 px-2 py-1.5 text-xs text-[var(--text)]"
                 />
               </div>
             </div>
           </div>
+        )}
+
+        {showOptions && (
+          <div
+            className="mb-3 border-t border-white/10"
+            aria-hidden
+          />
         )}
 
         {routeNotice && (
@@ -521,12 +633,22 @@ export default function NewRoutePage() {
             Ingen stopp ennå. Prøv «Ny rute» eller plukk fra katalogen.
           </p>
         ) : (
-          <ul className="space-y-2">
-            {ordered.map((bar, index) => (
+          <ul className="divide-y divide-white/10">
+            {ordered.map((bar, index) => {
+              const hoursWarning = hoursWarningForBar(bar);
+              const showHoursWarning =
+                hoursWarning != null &&
+                hoursWarning !== "Ikke åpent i tidsvinduet";
+              const hoursLabel = formatHoursForNow(
+                bar.openingHours,
+                timeWindow.windowStart,
+              );
+              return (
               <li
                 key={bar._id}
-                className="flex items-center gap-2 rounded-lg bg-black/30 px-2 py-2"
+                className="py-2.5 first:pt-0"
               >
+                <div className="flex items-start gap-2">
                 <button
                   type="button"
                   draggable
@@ -541,41 +663,68 @@ export default function NewRoutePage() {
                 >
                   <GripVertical className="size-4" aria-hidden />
                 </button>
-                <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <p className="truncate text-sm leading-none text-[var(--text)]">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm leading-snug text-[var(--text)]">
                     {bar.name}
                   </p>
-                  {bar.rating != null && (
-                    <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] leading-none text-[var(--muted)]">
-                      <Star
-                        className="size-2.5 fill-[#F5C518] text-[#F5C518]"
-                        aria-hidden
-                      />
-                      <span className="tabular-nums">
-                        {bar.rating.toFixed(1).replace(".", ",")}
-                      </span>
-                      {bar.ratingCount != null && (
-                        <span className="tabular-nums text-[var(--muted)]/70">
-                          ({bar.ratingCount})
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                    {bar.rating != null && (
+                      <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                        <Star
+                          className="size-2.5 fill-[#F5C518] text-[#F5C518]"
+                          aria-hidden
+                        />
+                        <span className="tabular-nums">
+                          {bar.rating.toFixed(1).replace(".", ",")}
                         </span>
-                      )}
-                    </span>
-                  )}
-                  {bar.beerPrice != null && (
-                    <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] leading-none text-[var(--muted)]">
-                      <Beer className="size-2.5" aria-hidden />
-                      <span className="tabular-nums">{bar.beerPrice} kr</span>
-                    </span>
-                  )}
+                        {bar.ratingCount != null && (
+                          <span className="tabular-nums text-[var(--muted)]/70">
+                            ({bar.ratingCount})
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {bar.beerPrice != null && (
+                      <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                        <Beer className="size-2.5" aria-hidden />
+                        <span className="tabular-nums">{bar.beerPrice} kr</span>
+                      </span>
+                    )}
+                    {hoursLabel && (
+                      <span
+                        className={`inline-flex items-center gap-0.5 text-[11px] leading-none ${
+                          showHoursWarning
+                            ? "font-medium text-[#F59E0B]"
+                            : "text-[var(--muted)]"
+                        }`}
+                        title={
+                          showHoursWarning ? (hoursWarning ?? undefined) : undefined
+                        }
+                      >
+                        {showHoursWarning ? (
+                          <AlertTriangle
+                            className="size-2.5 shrink-0"
+                            aria-hidden
+                          />
+                        ) : (
+                          <Clock className="size-2.5 shrink-0" aria-hidden />
+                        )}
+                        <span>{hoursLabel}</span>
+                        {showHoursWarning && (
+                          <span className="sr-only"> ({hoursWarning})</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <a
-                  href={mapsDirectionsUrl(bar)}
+                  href={mapsPlaceUrl(bar)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Veibeskrivelse til ${bar.name}`}
+                  aria-label={`Vis ${bar.name} i Google Maps`}
                   className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--brand)]"
                 >
-                  <MapsDirectionsIcon className="size-5" />
+                  <MapsPlaceIcon className="size-5" />
                 </a>
                 <button
                   type="button"
@@ -585,34 +734,82 @@ export default function NewRoutePage() {
                 >
                   <X className="size-5" />
                 </button>
+                </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
 
         <div className="mt-2 flex items-end gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setShowPopular((v) => !v);
-              setShowCatalog(false);
-            }}
-            aria-expanded={showPopular}
-            aria-controls="popular-routes"
-            className={`inline-flex h-10 min-w-0 flex-1 items-center justify-center rounded-lg border px-3 text-sm font-medium transition ${
-              showPopular
-                ? "border-white/15 bg-[var(--brand)]/15 text-[var(--brand)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-                : "border-white/10 bg-white/[0.04] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-white/[0.07]"
-            }`}
-          >
-            Populære ruter
-          </button>
+          <div className="relative min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => {
+                setShowPopular((v) => !v);
+                setShowCatalog(false);
+              }}
+              aria-expanded={showPopular}
+              aria-haspopup="menu"
+              aria-controls="popular-routes"
+              className={`inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition ${
+                showPopular
+                  ? "border-white/15 bg-[var(--brand)]/15 text-[var(--brand)]"
+                  : "border-white/10 bg-white/[0.04] text-[var(--text)] hover:bg-white/[0.07]"
+              }`}
+            >
+              Populære ruter
+              <ChevronDown
+                className={`size-3.5 transition-transform duration-200 ${
+                  showPopular ? "rotate-180" : ""
+                }`}
+                aria-hidden
+              />
+            </button>
+            {showPopular && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Lukk meny"
+                  className="fixed inset-0 z-30 cursor-default"
+                  onClick={() => setShowPopular(false)}
+                />
+                <div
+                  id="popular-routes"
+                  role="menu"
+                  aria-label="Populære ruter"
+                  className="absolute bottom-full left-0 z-40 mb-2 w-full overflow-hidden rounded-lg border border-white/10 bg-[var(--surface)] py-1 shadow-lg"
+                >
+                  {POPULAR_ROUTES.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => applyPopular(preset)}
+                      className="flex w-full flex-col items-start gap-0.5 px-3 py-2.5 text-left transition hover:bg-white/5"
+                    >
+                      <span className="text-sm text-[var(--text)]">
+                        {preset.name}
+                        <span className="text-[var(--muted)]">
+                          {" "}
+                          · {preset.barNames.length} stopp
+                        </span>
+                      </span>
+                      <span className="text-xs text-[var(--muted)]">
+                        {preset.blurb}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
             <span className="text-[11px] leading-none text-[var(--muted)]">
               Antall stopp
             </span>
-            <div className="flex h-10 w-full items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <div className="flex h-10 w-full items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-1.5">
               <button
                 type="button"
                 aria-label="Færre stopp"
@@ -641,35 +838,6 @@ export default function NewRoutePage() {
           </div>
         </div>
 
-        {showPopular && (
-          <ul
-            id="popular-routes"
-            className="mt-2 space-y-1"
-            role="list"
-          >
-            {POPULAR_ROUTES.map((preset) => (
-              <li key={preset.id}>
-                <button
-                  type="button"
-                  onClick={() => applyPopular(preset)}
-                  className="flex w-full flex-col items-start gap-0.5 rounded-lg bg-black/20 px-3 py-2.5 text-left transition hover:bg-black/35"
-                >
-                  <span className="text-sm text-[var(--text)]">
-                    {preset.name}
-                    <span className="text-[var(--muted)]">
-                      {" "}
-                      · {preset.barNames.length} stopp
-                    </span>
-                  </span>
-                  <span className="text-xs text-[var(--muted)]">
-                    {preset.blurb}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
         <div className="mt-3 border-t border-white/10 pt-3">
           <button
             type="button"
@@ -686,10 +854,7 @@ export default function NewRoutePage() {
               {bars != null && (
                 <span className="text-[var(--muted)]">
                   {" "}
-                  · {barIds.length} valgt
-                  {activeFilterLabel
-                    ? ` · ${catalogBars.length} treff`
-                    : ` av ${bars.length}`}
+                  · {barIds.length} valgt av {bars.length}
                 </span>
               )}
             </span>
@@ -701,79 +866,128 @@ export default function NewRoutePage() {
             />
           </button>
           {showCatalog && (
-            <ul id="bar-catalog" className="mt-1.5 space-y-1" role="list">
+            <ul id="bar-catalog" className="mt-1.5 space-y-2" role="list">
               {catalogBars.map((bar) => {
                 const selected = barIds.includes(bar._id);
+                const hoursWarning = hoursWarningForBar(bar);
+                const hoursClosedOutside =
+                  hoursWarning === "Ikke åpent i tidsvinduet";
+                const hoursPartialWarning =
+                  hoursWarning != null && !hoursClosedOutside;
+                const hoursLabel = formatHoursForNow(
+                  bar.openingHours,
+                  timeWindow.windowStart,
+                );
+                const hoursAlert = hoursClosedOutside || hoursPartialWarning;
                 return (
                   <li
                     key={bar._id}
-                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 ${
-                      selected
-                        ? "bg-[var(--brand)]/20 text-[var(--text)]"
-                        : "bg-black/20 text-[var(--muted)]"
+                    className={`rounded-lg px-2 py-2 ${
+                      selected ? "bg-[var(--brand)]/20" : "bg-black/30"
                     }`}
                   >
-                    <button
-                      type="button"
-                      onClick={() => toggleBar(bar._id)}
-                      aria-label={
-                        selected
-                          ? `Fjern ${bar.name} fra ruten`
-                          : `Legg til ${bar.name}`
-                      }
-                      className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-                    >
-                      <span className="truncate text-sm leading-none text-[var(--text)]">
-                        {bar.name}
-                      </span>
-                      {bar.rating != null && (
-                        <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] leading-none text-[var(--muted)]">
-                          <Star
-                            className="size-2.5 fill-[#F5C518] text-[#F5C518]"
-                            aria-hidden
-                          />
-                          <span className="tabular-nums">
-                            {bar.rating.toFixed(1).replace(".", ",")}
-                          </span>
-                          {bar.ratingCount != null && (
-                            <span className="tabular-nums text-[var(--muted)]/70">
-                              ({bar.ratingCount})
+                    <div className="flex items-start gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleBar(bar._id)}
+                        aria-label={
+                          selected
+                            ? `Fjern ${bar.name} fra ruten`
+                            : `Legg til ${bar.name}`
+                        }
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className="truncate text-sm leading-snug text-[var(--text)]">
+                          {bar.name}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                          {bar.rating != null && (
+                            <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                              <Star
+                                className="size-2.5 fill-[#F5C518] text-[#F5C518]"
+                                aria-hidden
+                              />
+                              <span className="tabular-nums">
+                                {bar.rating.toFixed(1).replace(".", ",")}
+                              </span>
+                              {bar.ratingCount != null && (
+                                <span className="tabular-nums text-[var(--muted)]/70">
+                                  ({bar.ratingCount})
+                                </span>
+                              )}
                             </span>
                           )}
-                        </span>
-                      )}
-                      {bar.beerPrice != null && (
-                        <span className="inline-flex shrink-0 items-center gap-0.5 text-[10px] leading-none text-[var(--muted)]">
-                          <Beer className="size-2.5" aria-hidden />
-                          <span className="tabular-nums">{bar.beerPrice} kr</span>
-                        </span>
-                      )}
-                    </button>
-                    <a
-                      href={mapsDirectionsUrl(bar)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Veibeskrivelse til ${bar.name}`}
-                      className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--brand)]"
-                    >
-                      <MapsDirectionsIcon className="size-5" />
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => toggleBar(bar._id)}
-                      aria-label={
-                        selected
-                          ? `Fjern ${bar.name} fra ruten`
-                          : `Legg til ${bar.name}`
-                      }
-                      className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--text)]"
-                    >
-                      {selected ? (
-                        <Minus className="size-4" aria-hidden />
-                      ) : (
-                        <Plus className="size-4" aria-hidden />
-                      )}
-                    </button>
+                          {bar.beerPrice != null && (
+                            <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                              <Beer className="size-2.5" aria-hidden />
+                              <span className="tabular-nums">
+                                {bar.beerPrice} kr
+                              </span>
+                            </span>
+                          )}
+                          {hoursLabel && (
+                            <span
+                              className={`inline-flex items-center gap-0.5 text-[11px] leading-none ${
+                                hoursClosedOutside
+                                  ? "font-medium text-red-400"
+                                  : hoursPartialWarning
+                                    ? "font-medium text-[#F59E0B]"
+                                    : "text-[var(--muted)]"
+                              }`}
+                              title={
+                                hoursAlert
+                                  ? (hoursWarning ?? undefined)
+                                  : undefined
+                              }
+                            >
+                              {hoursAlert ? (
+                                <AlertTriangle
+                                  className="size-2.5 shrink-0"
+                                  aria-hidden
+                                />
+                              ) : (
+                                <Clock
+                                  className="size-2.5 shrink-0"
+                                  aria-hidden
+                                />
+                              )}
+                              <span>{hoursLabel}</span>
+                              {hoursAlert && (
+                                <span className="sr-only">
+                                  {" "}
+                                  ({hoursWarning})
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                      <a
+                        href={mapsPlaceUrl(bar)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Vis ${bar.name} i Google Maps`}
+                        className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--brand)]"
+                      >
+                        <MapsPlaceIcon className="size-5" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => toggleBar(bar._id)}
+                        aria-label={
+                          selected
+                            ? `Fjern ${bar.name} fra ruten`
+                            : `Legg til ${bar.name}`
+                        }
+                        className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--text)]"
+                      >
+                        {selected ? (
+                          <Minus className="size-4" aria-hidden />
+                        ) : (
+                          <Plus className="size-4" aria-hidden />
+                        )}
+                      </button>
+                    </div>
                   </li>
                 );
               })}
@@ -785,6 +999,56 @@ export default function NewRoutePage() {
 
       {error && (
         <p className="mt-4 mb-24 text-sm text-red-400">{error}</p>
+      )}
+
+      {pendingAdd && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
+          role="presentation"
+          onClick={() => setPendingAdd(null)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="filter-mismatch-title"
+            aria-describedby="filter-mismatch-desc"
+            className="w-full max-w-md rounded-xl border border-white/10 bg-[var(--surface)] p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="filter-mismatch-title"
+              className="font-[family-name:var(--font-display)] text-lg text-[var(--text)]"
+            >
+              Matcher ikke filtrene
+            </h2>
+            <p
+              id="filter-mismatch-desc"
+              className="mt-2 text-sm leading-snug text-[var(--muted)]"
+            >
+              {pendingAdd.name} matcher ikke valgte filter (
+              {pendingAdd.reasons.join(", ")}). Vil du legge til likevel?
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingAdd(null)}
+                className="flex-1 rounded-lg border border-white/10 px-3 py-2.5 text-sm text-[var(--text)] transition hover:bg-white/5"
+              >
+                Avbryt
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  addBar(pendingAdd.id);
+                  setPendingAdd(null);
+                }}
+                className="flex-1 rounded-lg bg-[var(--brand)] px-3 py-2.5 text-sm font-medium text-white transition hover:brightness-110"
+              >
+                Legg til
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">

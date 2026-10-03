@@ -26,7 +26,8 @@ Blueprint for **BTB** («Bar-til-bar»). Utvikling er **spec-drevet**: les og f�
 
 | Fase | Status |
 |------|--------|
-| Spec / blueprint | Aktiv |
-| MVP (solo) | Ikke startet |
+| Spec / blueprint | Ferdig |
+| MVP (solo, fase 1) | Lukket 2026-09-29 |
+| Fase 1.5 — åpningstider per ukedag | Aktiv |
 | Gruppe-modus | Senere |
 | Konkurranse | Senere |

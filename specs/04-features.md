@@ -81,7 +81,7 @@ Minimumskrav MVP: **navn**. Uten koordinater deltar stoppet ikke i avstandsbaser
 ```text
 Gjest eller innlogget → `/routes/new`
   → «Din rute» vises som default (auto-forslag lastes med en gang)
-  → Valgfritt: «Options» ved «Ny rute» → maks ølpris · min. rating · tidsvindu
+  → Valgfritt: «Options» ved «Ny rute» → maks ølpris · min. rating · uten-dag · tidsvindu
   → Velg antall stopp (+/−) · se veiledende tid
   → Klient sender `now` + stopCount + valgfri `seed` + options-filtre
   → Server: filter (pris/rating/åpent i vindu) → seeded start → nearest-neighbor
@@ -102,10 +102,19 @@ Panel ved siden av «Ny rute» på `/routes/new`. Preferanser lever i **klient-s
 |------------|--------|
 | **Maks ølpris** | Kun stopp med `beerPrice ≤` verdi (halvliter NOK). Mangler pris → utenfor. Default: av. |
 | **Min. rating** | Kun stopp med `rating ≥` verdi. Mangler rating → utenfor. Steg f.eks. 3.5 / 4.0 / 4.5. Default: av. |
-| **Tidsvindu** | `windowStart` / `windowEnd` (epoch ms). Stedet må være åpent i **hele** vinduet. Uten vindu: filter på `now` som før. |
+| **Uten-dag** | Hvilken **ukedag** brukeren skal dra ut. **Dropdown** (man–søn). **Default: ukedagen i Europe/Oslo når siden lastes.** Løses til neste kalenderdato ≥ i dag med den ukedagen (inkl. i dag). |
+| **Tidsvindu** | Klokkeslett `fra`–`til` (HH:mm) på uten-dagen. Hvis `til ≤ fra` → **neste kalenderdag**. **Åpen** = minst ett tidspunkt i vinduet. **Full dekning** = åpent hele vinduet (ingen varsel). Delvis: «Åpner snart» (ikke åpent ved start) eller «Stenger snart» (stenger før slutt). **Default: nå (Oslo) → +5 timer.** |
 
-- Aktive filtre vises kompakt under «Din rute» (f.eks. «≤ 110 kr · ≥ 4.0 · 20–02»).
-- Under 2 kandidater etter filtre: tydelig norsk melding; foreslå å myke filtre. Pris/rating er hard — åpent-filter kan falle tilbake til «få åpne»-melding uten å ignorere pris/rating.
+#### Uten-dag og åpningstid (MVP)
+
+- **Uten-dag** = kvelden man *starter* (velg fre for «fredagskveld», også når vinduet går forbi midnatt).
+- Dropdown-label: norske ukedagsnavn (`Mandag` … `Søndag`). Ingen egen datovelger i MVP.
+- Aktive filtre kompakt **alltid** over stopplisten: f.eks. «Fre 20–01» (default) eller «Maks 110 kr · 4,0+ · Fre 20–02».
+- Åpningstid-sjekk følger [03-data-model.md](03-data-model.md) (overnight).
+- **Auto-forslag** inkluderer steder **åpne minst ett tidspunkt** i tidsvinduet. ≤ 5 slike: melding «N utesteder åpne, utvid filter for fler valg». Under 2: fall tilbake til pris/rating-pool.
+- Er ikke alle foreslåtte stopp åpne hele vinduet: **smart rekkefølge etter åpningstid** (tidlig stenging / allerede åpent tidligere; sent åpnende senere). Ellers samme timer-baserte orden + nærmeste.
+- **Manuell katalog:** hele katalogen synlig. Mismatch (ingen overlap med vindu / pris / rating) → bekreftelsesdialog.
+- **Stopp i «Din rute»** uten full vindu-dekning: åpningstid i amber + varsel-ikon (ikke egen tekst ved navn).
 - **Aldersgrense (18/20) er ikke i scope.**
 
 ### Redigering av forslag / rute (MVP)
@@ -115,16 +124,16 @@ Gjelder både etter auto-forslag og ved manuell bygging (`/routes/new`):
 | Handling | Atferd |
 |----------|--------|
 | **Ny rute** | Shuffle-knapp i «Din rute»; ny `seed` → nytt forslag med samme stoppantall og options |
-| **Options** | Knapp ved «Ny rute»; maks ølpris, min. rating, tidsvindu (se over) |
-| **Populære ruter** | Knapp ved +/−; åpner kuraterte favoritt-runder (Bakklandet, Solsiden, …) som fyller stopplisten |
+| **Options** | Knapp ved «Ny rute»; maks ølpris, min. rating, uten-dag (dropdown), tidsvindu (se over) |
+| **Populære ruter** | Knapp ved +/− åpner **popup-meny** med kuraterte favoritt-runder; lukkes ved valg eller klikk utenfor |
 | **Endre rekkefølge** | Dra-og-slipp eller opp/ned-kontroller; `barIds` (og parallell `stopDwellMinutes`) permuteres |
 | **Fjerne stopp** | Fjern fra listen; minst **2 stopp** før start (under → disable «Start kvelden» / vis melding) |
-| **Legge til stopp** | Fra katalog (skjult bak toggle) eller nytt eget stopp |
-| **Rating** | Vises på stopp i «Din rute» (kuratert `rating` 1–5 + `ratingCount`) |
-| **Ølpris** | Veiledende `beerPrice` (NOK) med øl-ikon ved siden av rating |
-| **Åpningstid** | På aktiv runde: dagens `openingHours` (Europe/Oslo) |
+| **Legge til stopp** | Fra katalog (toggle) eller eget stopp. Katalog viser **alle** etter filter. Mismatch (pris/rating/åpningstid) → bekreftelsesdialog før add |
+| **Rating** | Under navn på stopp i «Din rute» (kuratert `rating` 1–5 + `ratingCount`) |
+| **Ølpris** | Under navn: veiledende `beerPrice` (NOK) med øl-ikon |
+| **Åpningstid** | Under navn: slot for uten-dagen. Mismatch → åpningstid i amber + `AlertTriangle` (klokke byttes); tooltip/sr-only for «Åpner snart» / «Stenger snart» |
 | **Statusbar** | Sticky topp på aktiv runde: stopp-progress, tid brukt, innstillinger |
-| **Veibeskrivelse** | Ikon åpner Google Maps-navigasjon til stoppets koordinater/adresse |
+| **Kart** | Ikon åpner Google Maps sted-/profilvisning via `googlePlaceId` (`query_place_id`; fallback coords/navn — ikke turn-by-turn) |
 | **Estimat** | Rekalkuleres umiddelbart ved reorder/add/remove |
 
 - Forslaget er aldri låst — det er et utgangspunkt.
@@ -135,12 +144,12 @@ Gjelder både etter auto-forslag og ved manuell bygging (`/routes/new`):
 1. Kun `isActive` **kuraterte** barer med koordinater (brukerskapte er ikke i auto-forslag i MVP).
 2. Valgfritt: `beerPrice ≤ maxBeerPrice` (mangler pris → ekskludér).
 3. Valgfritt: `rating ≥ minRating` (mangler rating → ekskludér).
-4. Filtrer åpen: ved `windowStart`/`windowEnd` må stedet være åpent i **hele** vinduet; ellers åpen ved `now`. Mangler åpningstider → antas åpen.
-5. Startstopp velges ut fra valgfri `seed` (for «Ny rute»); deretter nearest-neighbor. Uten seed: første kandidat etter indeks 0.
-6. Bruker velger **antall stopp** (2–12) med +/−; UI viser veiledende tid i samme boks basert på **30 min/stopp** (gangtid kommer i tillegg etter forslag). Endring av stoppantall regenererer forslag.
-7. Greedy nearest-neighbor til `stopCount` er nådd.
-8. Returner liste; ingen hardlåsing — bruker **må** kunne endre rekkefølge, fjerne stopp og legge til stopp før start.
-9. Vis alltid **estimert gangavstand** og **estimert total tid** for forslaget (se estimatregler under).
+4. **Forslag:** steder med **minst ett** åpent tidspunkt i `windowStart`/`windowEnd`; soft melding ved ≤ 5; under 2 → fall tilbake til pris/rating-pool. Varsel i UI ved delvis dekning. Mangler åpningstider → antas åpen.
+5. Startstopp + nearest-neighbor: **prioriter steder åpne i hele tidsvinduet** ved plukking. Fyll deretter med delvis åpne ved behov. Seed gir variasjon innen fullt-åpne.
+6. Etter plukking: **omordne alltid** etter åpningstid (`orderRouteByOpeningHours`) — besøk når åpent; tidlig stenging tidligere i ruten. Gangtid + 30 min/stopp i planen.
+7. Bruker velger **antall stopp** (2–12) med +/−; UI viser veiledende tid (30 min/stopp + gang). Endring av stoppantall regenererer forslag.
+8. Returner liste; bruker kan fortsatt endre rekkefølge manuelt.
+9. Vis alltid **estimert gangavstand** og **estimert total tid**.
 
 *(Tidsbudsjett som egen forslagsmodus er ikke i UI i MVP; backend kan fortsatt støtte det senere.)*
 
@@ -252,4 +261,6 @@ Vi overlevde
 - [ ] Etter forslag (og i manuell builder): kan endre rekkefølge og fjerne stopp; estimat oppdateres.
 - [ ] Disclaimer og personvern tilgjengelig i UI.
 - [ ] Fremmed token/user kan ikke mutere andres data.
-- [ ] Options: maks ølpris, min. rating og tidsvindu filtrerer forslag og katalog.
+- [ ] Options: maks ølpris, min. rating, uten-dag og tidsvindu styrer forslag (preferanse); katalog forblir full.
+- [ ] Catalog-add som mismatcher filter → bekreftelsesdialog; stopp uten full vindu-dekning → åpningstid i amber + varsel-ikon; forslag omordnes etter åpningstid.
+- [ ] Overnight-åpningstid: fre 20–02 treffer barer åpne fre kveld og lør natt før stenging; lør 01 dekkes av fre-slot når close er 02:00.

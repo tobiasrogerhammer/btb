@@ -58,8 +58,8 @@ Cron (daglig): slett `guestSessions` der `expiresAt < now` og `claimedByUserId` 
 | `beerPrice` | number? | Veiledende ølpris i NOK per **halvliter** (kuratert manuelt; ikke overskrives av Places) |
 | `rating` | number? | Snitt 1.0–5.0; manuelt i MVP, Places-sync senere |
 | `ratingCount` | number? | Antall vurderinger |
-| `openingHours` | objekt? | Per ukedag: `{ day, open: "HH:mm", close: "HH:mm" }`; seed-typisk i MVP, Places senere |
-| `googlePlaceId` | string? | Places API place id for sync (fase 1.5); valgfritt |
+| `openingHours` | objekt? | Slots `{ day, open, close }` per ukedag — se **Åpningstider**. Etter spor A: fra Places, ikke felles `TYPICAL_HOURS` |
+| `googlePlaceId` | string? | Places place id. Når satt: re-seed overskriver ikke `openingHours` |
 | `source` | `curated` \| `user` | Seed vs. brukerskapt stopp |
 | `createdByUserId` | Id\<users\>? | Når innlogget opprettet |
 | `guestSessionId` | Id\<guestSessions\>? | Når gjest opprettet (slettes med session) |
@@ -68,7 +68,24 @@ Cron (daglig): slett `guestSessions` der `expiresAt < now` og `claimedByUserId` 
 
 **Indekser:** `by_active` (`isActive`), `by_source` (`source`), `by_creator` (`createdByUserId`), `by_guest_session` (`guestSessionId`).
 
-Åpningstider lagres strukturert nok til regelbasert filter. Klient sender `now` (og valgfritt `windowStart`/`windowEnd`) inn i foreslå-logikk.
+### Åpningstider (semantikk)
+
+Lagres som liste av slots (Google Places-konvensjon):
+
+| Felt | Type | Merknad |
+|------|------|---------|
+| `day` | 0–6 | **Åpningsdag** (0 = søndag … 6 = lørdag), Europe/Oslo |
+| `open` / `close` | `"HH:mm"` | Veggtid. Hvis `close ≤ open` (eller typisk natt, f.eks. `14:00`–`02:00`): slotten dekker **åpningsdagen fra `open` til midnatt** og **neste kalenderdag fra 00:00 til `close`** |
+
+**`isOpenNow(hours, t)`:** mangler hours → antas åpen. Ellers true hvis minst én slot dekker øyeblikket `t` (Oslo), dvs. sjekk slots for **kalenderdagen til `t`** *og* overnight-slots fra **foregående dag**.
+
+**`isOpenDuringWindow(hours, start, end)`:** åpent i **hele** `[start, end)`.
+
+**`isOpenAtAnyDuringWindow(hours, start, end)`:** åpent minst ett tidspunkt i vinduet (forslag + «åpen»-telling).
+
+**`hoursWarningForWindow`:** null ved full dekning; ellers «Åpner snart» / «Stenger snart» / «Ikke åpent i tidsvinduet».
+
+Klient bygger `windowStart`/`windowEnd` fra **uten-dag** + klokkeslett (se features) og sender epoch ms til `routes.suggest`. Backend tar ikke imot ukedag direkte. «Åpen» i forslag = minst ett tidspunkt i vinduet; varsel i UI ved delvis dekning.
 
 ### Rute-preferanser (klient → `routes.suggest`)
 
@@ -78,7 +95,7 @@ Ikke egne tabeller i MVP. Args på query:
 |-----|------|---------|
 | `maxBeerPrice` | number? | Maks ølpris per stopp |
 | `minRating` | number? | Min. rating |
-| `windowStart` / `windowEnd` | number? | Epoch ms; åpen i hele vinduet |
+| `windowStart` / `windowEnd` | number? | Epoch ms; åpen i hele vinduet (klient ankrer på uten-dag) |
 | `now` | number | Påkrevd; brukes når vindu mangler |
 
 Katalogen på `/routes/new` filteres klient-side med samme verdier.
