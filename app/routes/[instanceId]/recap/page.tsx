@@ -63,6 +63,7 @@ export default function RecapPage() {
     );
   }
 
+  const route = instance;
   const photos = (logs ?? [])
     .map((l) => l.photoUrl)
     .filter((u): u is string => Boolean(u));
@@ -78,7 +79,7 @@ export default function RecapPage() {
       setNameError("Gi kvelden et navn");
       return false;
     }
-    if (trimmed === instance.name) {
+    if (trimmed === route.name) {
       setNameError(null);
       return true;
     }
@@ -140,7 +141,7 @@ export default function RecapPage() {
         <p className="mt-1.5 text-sm text-red-400">{nameError}</p>
       )}
       <p className="mt-2 text-sm text-[var(--muted)]">
-        {instance.bars.length} stopp ·{" "}
+        {route.bars.length} stopp ·{" "}
         {doneChallenges.length} utfordringer huket av
         {savingName ? " · Lagrer…" : ""}
       </p>
