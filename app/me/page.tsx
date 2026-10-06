@@ -153,7 +153,9 @@ export default function MePage() {
               night.status === "completed"
                 ? `/routes/${night._id}/recap`
                 : `/routes/${night._id}`;
-            const when = formatNightDate(night.completedAt ?? night.startedAt);
+            const when = formatNightDate(
+              night.completedAt ?? night.startedAt ?? undefined,
+            );
             return (
               <li key={night._id} className="py-3">
                 <Link href={href} className="flex items-center gap-3">

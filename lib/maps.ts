@@ -1,4 +1,4 @@
-/** Google Maps sted-/profilvisning. Prefererer place id, deretter coords, deretter navn. */
+/** Google Maps sted-/profilvisning. Prefererer place id, deretter navn/adresse (ikke bare coords). */
 export function mapsPlaceUrl(bar: {
   name: string;
   address?: string;
@@ -10,9 +10,13 @@ export function mapsPlaceUrl(bar: {
     const query = encodeURIComponent(bar.name);
     return `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${encodeURIComponent(bar.googlePlaceId)}`;
   }
+  // Navn/adresse — coords åpner bare en pin uten Google-stedinfo
+  const q = [bar.name, bar.address?.trim()].filter(Boolean).join(", ");
+  if (q.length > 0) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+  }
   if (bar.lat != null && bar.lng != null) {
     return `https://www.google.com/maps/search/?api=1&query=${bar.lat},${bar.lng}`;
   }
-  const q = bar.address?.trim() || `${bar.name} Trondheim`;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("Trondheim")}`;
 }

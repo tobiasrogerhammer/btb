@@ -134,7 +134,7 @@ Gjelder både etter auto-forslag og ved manuell bygging (`/routes/new`):
 | **Ølpris** | Under navn: veiledende `beerPrice` (NOK) med øl-ikon |
 | **Åpningstid** | Under navn: slot for uten-dagen. Mismatch → åpningstid i amber + `AlertTriangle` (klokke byttes); tooltip/sr-only for «Åpner snart» / «Stenger snart» |
 | **Statusbar** | Sticky topp på aktiv runde: stopp-progress, tid brukt, innstillinger |
-| **Kart** | Ikon åpner Google Maps sted-/profilvisning via `googlePlaceId` (`query_place_id`; fallback coords/navn — ikke turn-by-turn) |
+| **Kart** | Ikon åpner Google Maps sted-/profilvisning via `googlePlaceId` (`query_place_id`; fallback navn/adresse, deretter coords — ikke turn-by-turn) |
 | **Estimat** | Rekalkuleres umiddelbart ved reorder/add/remove |
 
 - Forslaget er aldri låst — det er et utgangspunkt.

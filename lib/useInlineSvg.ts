@@ -36,7 +36,9 @@ export function useInlineSvg(src: string): {
           true,
         ) as unknown as SVGElement;
         svg.setAttribute("width", "100%");
-        svg.setAttribute("height", "auto");
+        // height="auto" er ugyldig SVG-lengde; behold aspekt via CSS
+        svg.removeAttribute("height");
+        svg.style.height = "auto";
         svg.removeAttribute("xmlns:xlink");
         hostRef.current.replaceChildren(svg);
         setReady(true);
