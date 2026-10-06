@@ -164,12 +164,33 @@ Hovedskjerm under bruk (`/routes/[instanceId]`):
   - Barer / katalog → **Utesteder**
   - Oppgaver → **Utfordringer** (ikke «øvinger»)
   - Fullføre → **Vi overlevde**
-- **Navbar:** rute-ikon (`/routes/new`, aria-label «Min rute») · martini-ikon (`/bars`, aria-label «Utesteder») · profil-ikon i sirkel (`/sign-in`, aria-label «Konto»)
+- **Navbar:** rute-ikon (`/routes/new`, aria-label «Min rute») · martini-ikon (`/bars`, aria-label «Utesteder») · profil-ikon i sirkel (`/me` innlogget / `/sign-in` utlogget, aria-label «Konto»)
 - Korte verb ellers: «Sjekk inn», «Huk av», «Neste stopp», «Legg til stopp».
 - Recap: «Vi overlevde» + «Gi kvelden et navn» + collage + utfordringer; gjest: «Lagres ikke uten bruker — slettes i morgen».
+- **Min profil (`/me`, fase 1.5.1):** én komposisjon — header (avatar + navn + stats) → kveldsfeed (ikke dashboard-grid). Flat liste med separatorer / lette rader; cards kun der rad er trykkbar interaksjon. Copy: «Min profil», «Mine kvelder», «Logg ut», «Slett konto». Ingen follower-UI eller «sosialt nettverk»-chrome.
 - Microcopy og builtin-utfordringer: se tone i [01-product.md](01-product.md). Unngå school-/emne-terminologi i utfordringstekster.
 - Footer: lenker til ansvar og personvern.
 - Kode/API: engelske termer (`challenges`, `routeInstances`, `guestSessions`).
+
+## Min profil — layout (Fase 1.5.1)
+
+```text
+┌─────────────────────────┐
+│ [avatar]  Navn          │
+│ 3 kvelder · 12 stopp · 4 km │  ← stats, én linje muted
+├─────────────────────────┤
+│ Mine kvelder            │
+│ Kveld A · fullført · …  │  ← trykk → recap / aktiv
+│ Kveld B · aktiv · …     │
+├─────────────────────────┤
+│ Logg ut                 │
+│ Slett konto             │
+└─────────────────────────┘
+```
+
+- Ingen hero-stats-strips med store tall-kort; stats er sekundær meta under navn.
+- Tom tilstand: «Ingen kvelder ennå» + CTA til `/routes/new`.
+- Bekreftelsesdialog før slett konto.
 
 ## Når design endres
 

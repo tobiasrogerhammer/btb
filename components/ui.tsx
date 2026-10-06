@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Martini, Route, User } from "lucide-react";
+import { ArrowLeft, Martini, Route } from "lucide-react";
 import { ReactNode } from "react";
+import { AccountNavLink } from "@/components/AccountNavLink";
 
 export function BrandMark({
   size = 28,
@@ -76,13 +77,7 @@ export function AppShell({
             >
               <Martini className="size-4" aria-hidden />
             </Link>
-            <Link
-              href="/sign-in"
-              aria-label="Konto"
-              className="inline-flex size-9 items-center justify-center rounded-full border border-[var(--brand)] text-white transition hover:bg-[var(--brand)]/10"
-            >
-              <User className="size-4" aria-hidden />
-            </Link>
+            <AccountNavLink />
           </nav>
         </header>
       )}

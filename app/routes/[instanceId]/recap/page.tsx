@@ -114,7 +114,7 @@ export default function RecapPage() {
     }
     await claim({ guestToken, now: Date.now() });
     clearGuest();
-    router.push("/routes");
+    router.push("/me");
   }
 
   return (
@@ -188,14 +188,14 @@ export default function RecapPage() {
           ) : (
             <PrimaryButton
               onClick={() =>
-                void persistName().then((ok) => ok && router.push("/routes"))
+                void persistName().then((ok) => ok && router.push("/me"))
               }
             >
               Ferdig
             </PrimaryButton>
           )}
           <Link
-            href="/routes"
+            href="/me"
             className="block text-center text-sm text-[var(--muted)]"
           >
             Se mine kvelder

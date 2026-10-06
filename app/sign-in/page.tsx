@@ -21,6 +21,13 @@ function SignInForm() {
   const claimGuest = useMutation(api.routes.claimGuest);
 
   useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    if (claim && guestToken) return;
+    if (claim) return;
+    router.replace("/me");
+  }, [isAuthenticated, isLoading, claim, guestToken, router]);
+
+  useEffect(() => {
     if (isLoading || !isAuthenticated || !claim || !guestToken) return;
     let cancelled = false;
     void (async () => {
@@ -28,7 +35,7 @@ function SignInForm() {
         await claimGuest({ guestToken, now: Date.now() });
         if (cancelled) return;
         clearGuest();
-        router.replace("/routes");
+        router.replace("/me");
       } catch (err) {
         if (!cancelled) {
           setError(
@@ -54,10 +61,10 @@ function SignInForm() {
     if (claim && guestToken) {
       await claimGuest({ guestToken, now: Date.now() });
       clearGuest();
-      router.push("/routes");
+      router.push("/me");
       return;
     }
-    router.push("/");
+    router.push("/me");
   }
 
   async function onGoogle() {
@@ -65,7 +72,7 @@ function SignInForm() {
     setError(null);
     try {
       await signIn("google", {
-        redirectTo: claim ? "/sign-in?claim=1" : "/",
+        redirectTo: claim ? "/sign-in?claim=1" : "/me",
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google-innlogging feilet");
@@ -83,7 +90,17 @@ function SignInForm() {
       await signIn("password", formData);
       await afterAuth();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Innlogging feilet");
+      const raw = err instanceof Error ? err.message : "Innlogging feilet";
+      if (/already exists/i.test(raw)) {
+        setFlow("signIn");
+        setError(
+          "Kontoen finnes allerede — logg inn i stedet (eller bruk Google hvis du opprettet den der).",
+        );
+      } else if (/InvalidAccountId|InvalidSecret|invalid/i.test(raw)) {
+        setError("Feil e-post eller passord.");
+      } else {
+        setError(raw);
+      }
     } finally {
       setBusy(false);
     }

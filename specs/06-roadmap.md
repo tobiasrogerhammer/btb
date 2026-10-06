@@ -59,6 +59,18 @@ Implementeringsrekkefølge:
 
 **Exit fase 1.5:** spor A + bruker kan styre opphold per stopp.
 
+## Fase 1.5.1 — Min profil (konto + kveldsfeed)
+
+Etter at innlogging virker i prod: én skjerm som blander **profil** og **egen sosial historikk** — ikke gruppe.
+
+1. [x] Rute `/me` + navbar: innlogget → `/me`, utlogget → `/sign-in`
+2. [x] Query: nåværende bruker + stats (fullførte kvelder, stopp, km) + liste over egne instances (med valgfri photo-thumb)
+3. [x] UI iht. [05-design.md](05-design.md) / Flyt H i [04-features.md](04-features.md)
+4. [x] Logg ut; slett konto (bekreft + cascade egne data — se [08-privacy.md](08-privacy.md))
+5. [x] `/routes` → redirect eller samme feed-seksjon på `/me` (unngå to konkurrerende «mine kvelder»-sider)
+
+**Exit:** Innlogget bruker ser profil + egne kvelder på `/me`; ingen andres data lekker.
+
 ## Fase 2 — Gruppe
 
 - `groups` / `groupMembers`
@@ -118,3 +130,4 @@ Implementeringsrekkefølge:
 | 2026-09-29 | Tidsvindu-default: nå (Oslo) → +5 timer (ikke fast 20–02) |
 | 2026-09-29 | Fase 1 lukket (smoke-test = restgjeld). Fase 1.5 startet: spor A = Places-åpningstider per ukedag før stopptid |
 | 2026-09-29 | Suggest: smart ruteorden etter åpningstid når ikke alle stopp er åpne i hele tidsvinduet |
+| 2026-10-05 | Fase 1.5.1: **Min profil** (`/me`) = profil + stats + egen kveldsfeed; ikke offentlige profiler/følgere |

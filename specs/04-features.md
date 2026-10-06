@@ -16,6 +16,7 @@
 | Brukerskapt utfordring | Ja | Moderering |
 | Solo rute-instans | Ja | — |
 | Historikk (Mine kvelder) | Ja | — |
+| Min profil (konto + kveldsfeed) | Ja (fase 1.5.1) | Offentlig profil / følgere |
 | Ta samme rute på nytt (replay) | Ja | — |
 | Estimert tid + gangavstand for rute | Ja | — |
 | Gjesterunde (uten konto) | Ja | — |
@@ -191,13 +192,54 @@ Beregnes for template/instance når `barIds` endres, og vises i rutebygger, fors
 ## Flyt E — Historikk og ta på nytt
 
 ```text
-/routes (krever innlogging)
+/routes eller /me#kvelder (krever innlogging)
   → Liste: aktive + fullførte
   → «Ta på nytt» → ny instance (samme barIds + challengeIds)
 ```
 
 - Replay kun for konto.
 - Ved «ta på nytt»: patch template til siste instance-kopi.
+- **Fase 1.5.1:** historikk er primært seksjon på **Min profil** (`/me`); `/routes` kan redirecte dit eller beholde samme liste som alias.
+
+## Flyt H — Min profil (Fase 1.5.1)
+
+Blanding av **konto/profil** og **lett sosial egen-feed** — ikke gruppe, ikke følgere.
+
+```text
+Navbar «Konto» → innlogget: /me · utlogget: /sign-in
+  → Profil-header (avatar, navn, korte stats)
+  → Feed: tidligere / aktive kvelder (kort)
+  → Åpne kveld → aktiv runde eller recap
+  → «Ta på nytt» på fullførte
+  → Konto: logg ut · slett konto (bekreft)
+```
+
+### Hva siden er
+
+| Del | Innhold (1.5.1) |
+|-----|----------------|
+| **Profil** | Visningsnavn + avatar fra auth (`users.name`, `users.image`). E-post kun for eier (ikke i «sosial»-del). |
+| **Stats** | Antall fullførte kvelder · antall stopp (check-ins) · sum gang-km (fra lagrede estimat). Kun tall — ikke leaderboard. |
+| **Kveldsfeed** | Kronologisk liste (nyeste først): navn, status, stoppantall, estimat, dato. Fullførte: valgfri bilde-thumb fra stopLogs. CTA «Ta på nytt» / åpne recap. |
+| **Konto** | Logg ut. Slett konto (sletter egne rute-data + auth-bruker iht. personvern). Lenker til ansvar / personvern. |
+
+### Hva det *ikke* er (1.5.1)
+
+- Andres profiler, følgere, likes, kommentarer, aktivitet fra venner.
+- Offentlig delbar profil-URL (`/u/…`) — kan komme senere; default nå: **kun eier ser `/me`**.
+- Bio, badges, poeng — utsettes (fase 2/3).
+- Live «hvem er ute nå».
+
+### Akseptansekriterier (fase 1.5.1)
+
+- [x] Innlogget: profil-ikon går til `/me`; utlogget til `/sign-in`.
+- [x] `/me` uten auth → redirect/CTA til innlogging.
+- [x] Viser navn/avatar (fallback-initialer hvis mangler bilde).
+- [x] Stats stemmer med eiers `routeInstances` / `stopLogs`.
+- [x] Kveldsfeed viser egne instances; fremmed bruker ser ikke andres `/me`-data.
+- [x] «Ta på nytt» og åpne recap/aktiv runde fungerer som i Flyt E/G.
+- [x] Logg ut fungerer.
+- [x] Slett konto krever bekreftelse og fjerner brukerens data (eller dokumentert «kontakt oss» midlertidig — se privacy).
 
 ## Flyt F — Stopptid og varsel (fase 1.5 — ikke MVP)
 
@@ -232,17 +274,19 @@ Vi overlevde
 | `/disclaimer` eller modal | 18+ / ansvar — lenke til [07-disclaimer.md](07-disclaimer.md) |
 | `/personvern` | [08-privacy.md](08-privacy.md) |
 | `/sign-in`, `/sign-up` | Auth (+ claim gjest) |
+| `/me` | **Min profil** (Fase 1.5.1): profil + stats + kveldsfeed + konto — krever innlogging |
 | `/bars` | **Utesteder** — katalog + egne stopp |
 | `/routes/new` | Bygg / foreslå; redigerbar liste (reorder, fjern, legg til); estimat — uten navn |
 | `/routes/[instanceId]` | Aktiv runde |
 | `/routes/[instanceId]/recap` | Navn + collage + utfordringer + lagre-CTA |
-| `/routes` | Mine kvelder (innlogget; via Konto / recap — ikke navbar-label) |
+| `/routes` | Mine kvelder (fase 1); i 1.5.1: alias/redirect til `/me` kveldsseksjon |
 
 ## Eksplisitt utenfor MVP
 
 - Live «hvem er hvor» / gruppe-presence.
 - Poengtavle og konkurranseregler.
 - Push, chat, invitasjonslenker (kan komme tidlig i fase 2).
+- Offentlige profiler / følgere / sosial feed på tvers av brukere (fase 1.5.1 = kun egen feed).
 - Admin-UI for bar-kuratering (seed via mutation/script er nok).
 - Offline-first / PWA-krav (nice-to-have, ikke blocker).
 - Sosial deling av recap som bilde/story (kan komme raskt etter MVP).

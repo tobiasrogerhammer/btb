@@ -22,6 +22,7 @@ import type * as placesSyncActions from "../placesSyncActions.js";
 import type * as routes from "../routes.js";
 import type * as seed from "../seed.js";
 import type * as stopLogs from "../stopLogs.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   routes: typeof routes;
   seed: typeof seed;
   stopLogs: typeof stopLogs;
+  users: typeof users;
 }>;
 
 /**

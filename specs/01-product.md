@@ -42,7 +42,8 @@ Produktet skal føles som venner på byen, ikke som en bedriftsapp eller en «ed
 | Domene | UI-språk |
 |--------|----------|
 | Starte en runde | **Klar for kaos** / **Start kvelden** |
-| Historikk | **Mine kvelder** |
+| Historikk | **Mine kvelder** (på Min profil i fase 1.5.1) |
+| Konto | **Min profil** |
 | Oppgaver per stopp | **Utfordringer** |
 | Fullføre runden | **Vi overlevde** (parallell til «Klar for kaos») |
 | Aktiv runde | Pågående runde / kveld |
@@ -89,6 +90,7 @@ MVP: **Trondheim**, lite kuratert sett barer (manuelt verifisert).
 5. **Vi overlevde** → recap (collage + gjennomførte utfordringer).
 6. CTA: opprett bruker for å **lagre** kvelden; ellers slettes data dagen etter.
 7. Innlogget: **Mine kvelder** + ta samme rute på nytt.
+8. (Fase 1.5.1) **Min profil** — se hvem du er + egne overlevde kvelder på én skjerm.
 
 ## Ansvar og personvern
 

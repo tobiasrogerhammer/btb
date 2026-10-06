@@ -192,7 +192,17 @@ export default function PrivacyPage() {
           </h2>
           <p>
             Vi bruker lokal lagring i nettleseren for gjeste-token og
-            innlogging. Vi bruker ikke unødvendige markedsføringscookies i MVP.
+            innlogging. Vi bruker Google Analytics for bruksstatistikk
+            (sidevisninger); dette kan sette cookies via Google. Se{" "}
+            <a
+              href="https://policies.google.com/privacy"
+              className="text-[var(--text)] underline underline-offset-2 hover:text-white"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Googles personvern
+            </a>
+            .
           </p>
         </section>
 

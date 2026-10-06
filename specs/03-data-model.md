@@ -21,16 +21,21 @@ bars ──── challenges (bar-spesifikke, optional barId)
 
 ### `users`
 
+Convex Auth-bruker (+ app-felt). Feltene under speiler praktisk schema (`authTables` + utvidelser).
+
 | Felt | Type | Merknad |
 |------|------|---------|
-| `tokenIdentifier` | string | Fra auth-provider |
-| `name` | string | |
-| `email` | string | |
-| `pictureUrl` | string? | |
-| `createdAt` | number | |
+| `name` | string? | Fra auth / profil |
+| `email` | string? | |
+| `image` | string? | Profilbilde-URL fra OAuth |
+| `emailVerificationTime` | number? | |
+| `phone` / `phoneVerificationTime` | — | Auth-valgfritt; ikke brukt i UI |
+| `isAnonymous` | boolean? | |
 | `acceptedDisclaimerAt` | number? | Når bruker bekreftet 18+/ansvar |
 
-**Indekser:** `by_token` (`tokenIdentifier`), `by_email` (`email`).
+**Indekser:** `email` (`email`).
+
+**Min profil (Fase 1.5.1):** ingen nye tabeller. `/me` leser `users` (eier) + aggregerer egne `routeInstances` / `stopLogs`. Stats beregnes i query (ikke denormaliserte felter i MVP/1.5.1). Offentlig profil / `bio` / visibility-flagg utsettes.
 
 ### `guestSessions`
 

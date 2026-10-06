@@ -51,6 +51,7 @@ Data kan behandles av underleverandører som er nødvendige for driften, typisk:
 - **Convex** — database, fil-storage, backend
 - **Vercel** (eller tilsvarende) — hosting av webappen
 - Auth-leverandør via Convex Auth
+- **Google Analytics** — anonymisert/aggregerte bruksstatistikker (sidevisninger); Google er databehandler
 
 Disse behandler data etter egne avtaler / databehandleravtaler.
 
@@ -65,11 +66,13 @@ Disse behandler data etter egne avtaler / databehandleravtaler.
 Du kan be om innsyn, retting, sletting og begrensning, og klage til Datatilsynet.
 
 - **Gjester:** data forsvinner automatisk ved utløp; du kan også avbryte og be om umiddelbar sletting i UI (MVP: «Slett denne runden»).
-- **Konto:** slett konto i innstillinger (implementeres senest ved offentlig launch).
+- **Konto:** slett konto fra **Min profil** (`/me`) med bekreftelse (fase 1.5.1). Sletter egne rute-data, bilder og auth-bruker.
 
 ## 7. Informasjonskapsler / lokal lagring
 
-Vi bruker lokal lagring for gjeste-token og innlogging. Ikke unødvendige markedsføringscookies i MVP.
+Vi bruker lokal lagring for gjeste-token og innlogging.
+
+Vi bruker **Google Analytics** (`G-FEZDTD2YMN`) for å forstå bruk (sidevisninger, teknisk info som nettleser/enhet). Dette kan sette cookies / lagre identifikatorer via Google. Se [Googles personvern](https://policies.google.com/privacy).
 
 ## 8. Endringer
 
@@ -79,4 +82,4 @@ Vi kan oppdatere denne erklæringen. Vesentlige endringer varsles i appen eller 
 
 E-post til behandlingsansvarlig oppgis i app-footer ved launch.
 
-*Sist oppdatert: 2026-09-22*
+*Sist oppdatert: 2026-10-06*
