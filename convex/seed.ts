@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, type MutationCtx } from "./_generated/server";
 
 /** Studentbarer — kveldsåpent de fleste dager (0=søn … 6=lør). */
 const TYPICAL_HOURS = [
@@ -448,7 +448,44 @@ const GENERIC_CHALLENGES = [
   "Spill stein-saks-papir om hvem som betaler forrunden",
   "Lag en 10-sekunders toast til kvelden",
   "Velg en sang på jukebox / be bartenderen om en anbefaling",
+  "Få en øl spandert",
+  "Spander på noen andre",
+  "Parker hesten",
+  "Prøv sykeste drinken",
+  "Split the G",
+  "Ta selfie med bartenderen",
+  "Finn en look-alike",
+  "Fri til noen på baren",
+  "Bestill på et språk du ikke kan",
+  "Få nummeret til en fremmed",
+  "Vis frem din beste dancemove",
 ];
+
+/** Insert missing generic builtins (idempotent by exact text). */
+async function ensureGenericChallenges(
+  ctx: { db: MutationCtx["db"] },
+  now: number,
+): Promise<number> {
+  const builtins = await ctx.db
+    .query("challenges")
+    .withIndex("by_source", (q) => q.eq("source", "builtin"))
+    .collect();
+  const existingTexts = new Set(
+    builtins.filter((c) => c.barId == null).map((c) => c.text),
+  );
+  let inserted = 0;
+  for (const text of GENERIC_CHALLENGES) {
+    if (existingTexts.has(text)) continue;
+    await ctx.db.insert("challenges", {
+      text,
+      source: "builtin",
+      isActive: true,
+      createdAt: now,
+    });
+    inserted++;
+  }
+  return inserted;
+}
 
 export const seedDatabase = mutation({
   args: {},
@@ -462,6 +499,8 @@ export const seedDatabase = mutation({
       .query("bars")
       .withIndex("by_source", (q) => q.eq("source", "curated"))
       .collect();
+    const now = Date.now();
+
     if (existing.length > 0) {
       // Soft-hide builtin-utfordringer med gammel student-/emne-terminologi
       const builtins = await ctx.db
@@ -473,6 +512,8 @@ export const seedDatabase = mutation({
           await ctx.db.patch(c._id, { isActive: false });
         }
       }
+
+      const challengeCount = await ensureGenericChallenges(ctx, now);
 
       const byName = new Map(existing.map((b) => [b.name, b]));
       // Soft-hide retired curated bars removed from seed
@@ -510,12 +551,11 @@ export const seedDatabase = mutation({
       }
       return {
         bars: updated + inserted,
-        challenges: 0,
-        skipped: inserted === 0,
+        challenges: challengeCount,
+        skipped: inserted === 0 && challengeCount === 0,
       };
     }
 
-    const now = Date.now();
     const barIds = [];
     for (const bar of SEED_BARS) {
       const id = await ctx.db.insert("bars", {
@@ -525,16 +565,7 @@ export const seedDatabase = mutation({
       barIds.push(id);
     }
 
-    let challengeCount = 0;
-    for (const text of GENERIC_CHALLENGES) {
-      await ctx.db.insert("challenges", {
-        text,
-        source: "builtin",
-        isActive: true,
-        createdAt: now,
-      });
-      challengeCount++;
-    }
+    let challengeCount = await ensureGenericChallenges(ctx, now);
 
     const specifics = [
       { idx: 0, text: "Finn Work-Work sin mest «kontor»-aktige krok og ta bilde" },
