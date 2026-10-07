@@ -71,7 +71,7 @@ Brand `#CC3F0C` er den eneste sterke accenten. Ingen lilla. Hold paletten kort.
 
 - Fil: [`public/logo.png`](../public/logo.png) — geometrisk merke (bue + prikk) i brand-oransje på mørk bakgrunn.
 - Favicon: `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png` (generert fra `public/logo.png`).
-- Bruk i nav (`BrandMark`) og som hero-signal på landing — ikke erstatt display-«BtB» helt; logo + wordmark sammen.
+- Bruk i nav (`BrandMark`); landing hero er display-«Bar til bar» uten logo over — logo + wordmark i header.
 - **Link-deling:** `app/opengraph-image.png` (OG-/Twitter-kort; speilet i `public/og-image.png`). Sett `metadataBase` i `app/layout.tsx` — uten dette faller mange plattformer tilbake til Vercel-default.
 
 ## Rutebygger / foreslått runde
