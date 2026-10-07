@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AppShell, BackLink } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Ansvarsfraskrivelse — BTB",
+  title: "Ansvarsfraskrivelse — BtB",
 };
 
 export default function DisclaimerPage() {
@@ -13,7 +13,7 @@ export default function DisclaimerPage() {
         Ansvarsfraskrivelse
       </h1>
       <p className="mt-2 text-sm text-[var(--muted)]">
-        Ved å bruke BTB («Bar til bar») aksepterer du vilkårene under.
+        Ved å bruke BtB («Bar til bar») aksepterer du vilkårene under.
       </p>
 
       <div className="mt-6 space-y-6 text-sm leading-relaxed text-[var(--muted)]">
@@ -27,7 +27,7 @@ export default function DisclaimerPage() {
             konsumere alkohol der du befinner deg.
           </p>
           <p>
-            BTB oppfordrer til ansvarlig alkoholbruk. Vi er ikke ansvarlige for
+            BtB oppfordrer til ansvarlig alkoholbruk. Vi er ikke ansvarlige for
             valg du tar ute — inkludert beruselse, transport, sikkerhet eller
             hvordan du oppfører deg overfor andre.
           </p>
@@ -94,7 +94,7 @@ export default function DisclaimerPage() {
             7. Tjenesten «som den er»
           </h2>
           <p>
-            BTB leveres uten garanti om oppetid, nøyaktighet, fullstendighet
+            BtB leveres uten garanti om oppetid, nøyaktighet, fullstendighet
             eller egnethet for et bestemt formål. Funksjoner kan endres eller
             fjernes uten varsel, spesielt mens tjenesten er i tidlig fase (MVP).
           </p>

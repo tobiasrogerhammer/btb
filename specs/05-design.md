@@ -2,7 +2,7 @@
 
 ## Retning
 
-BTB («Bar-til-bar») skal føles som en **kveld ute**, ikke et admin-dashboard. Mobil-først, tydelig hierarki, lav friksjon midt i en runde.
+BtB («Bar-til-bar») skal føles som en **kveld ute**, ikke et admin-dashboard. Mobil-først, tydelig hierarki, lav friksjon midt i en runde.
 
 Tone: uformell, sosial, **20–25 studentliv** — humoristisk uten å bli barnslig, «startup-lilla» eller guttefest-klisje.
 
@@ -70,8 +70,9 @@ Brand `#CC3F0C` er den eneste sterke accenten. Ingen lilla. Hold paletten kort.
 ## Logo
 
 - Fil: [`public/logo.png`](../public/logo.png) — geometrisk merke (bue + prikk) i brand-oransje på mørk bakgrunn.
-- Favicon: `app/icon.png` (samme asset).
-- Bruk i nav (`BrandMark`) og som hero-signal på landing — ikke erstatt display-«BTB» helt; logo + wordmark sammen.
+- Favicon: `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png` (generert fra `public/logo.png`).
+- Bruk i nav (`BrandMark`) og som hero-signal på landing — ikke erstatt display-«BtB» helt; logo + wordmark sammen.
+- **Link-deling:** `app/opengraph-image.png` (OG-/Twitter-kort; speilet i `public/og-image.png`). Sett `metadataBase` i `app/layout.tsx` — uten dette faller mange plattformer tilbake til Vercel-default.
 
 ## Rutebygger / foreslått runde
 
@@ -83,10 +84,11 @@ Etter forslag eller under manuell bygging (`/routes/new`):
 ├─────────────────────────┤
 │ Din rute · estimat [⚙][↻]│  ← Options + Ny rute
 │ Fre 20–01 · (evt. maks/rating) │  ← alltid filter-oppsummering (inkl. default dag/tid)
-│ ≡  Bar A               [×]│
-│    ★ · øl · ⚠ 16–01       │  ← åpningstid i varselfarge + varsel-ikon ved mismatch
-│ ≡  Bar B               [×]  │
-│      [ −  N  + ]            │
+│ ⌃    Bar A             [kart][×]│
+│ ⌄    ★ · øl · ⚠ 16–01         │  ← åpningstid i varselfarge + varsel-ikon ved mismatch
+│ ⌃    Bar B             [kart][×]│
+│ ⌄                              │
+│      [ −  N  + ]              │
 │ ── Andre stopp ─────        │  ← hele katalogen; mismatch → bekreft
 │ [Start kvelden]             │
 └─────────────────────────┘
@@ -94,10 +96,10 @@ Etter forslag eller under manuell bygging (`/routes/new`):
 
 - Kart over listen: dekorativ Trondheim-SVG, ikke interaktiv; myk fade inn i sidebakgrunn (`--bg`). Innhold under kartet uten egen surface-boks.
 - **Options** (Lucide `SlidersHorizontal`) ved siden av «Ny rute»: inline panel uten egen boks/border; maks ølpris, min. rating, **uten-dag** (`<select>`-dropdown, man–søn, default = dagens ukedag i Oslo), tidsvindu (fra–til) — norsk copy.
-- Stopp-rad i «Din rute»: flat liste med **separatorer** (ikke egne bokser). **Navn**; under: rating, ølpris, åpningstid. Ved mismatch: åpningstid i amber + Lucide `AlertTriangle`.
+- Stopp-rad i «Din rute»: flat liste med **separatorer** (ikke egne bokser). Vertikalt sentrert rad: **navn** (primær) · meta under (rating, ølpris, åpningstid) · kart/fjern. Ved mismatch: åpningstid i amber + Lucide `AlertTriangle`.
 - **Populære ruter:** popup-meny over knappen (ikke inline-liste); lukkes ved valg / klikk utenfor.
 - Katalog («Alle stopp»): samme rad-layout som «Din rute» (navn; under: rating, ølpris, åpningstid). Delvis mismatch → amber + `AlertTriangle`; **helt utenfor** tidsvindu → **rød** åpningstid + `AlertTriangle`. Bekreftelsesdialog ved add som bryter pris/rating/åpningstid.
-- Rekkefølge: drag-handle (Lucide `GripVertical`) og/eller opp/ned for tilgjengelighet.
+- Rekkefølge: opp/ned-kontroller (Lucide `ChevronUp` / `ChevronDown`).
 - Fjern: tydelig, tommelvennlig — ikke gjemt i swipe-only.
 - Estimat i «Din rute»-header oppdateres live.
 
@@ -136,7 +138,7 @@ Hovedskjerm under bruk (`/routes/[instanceId]`):
 ## Landing
 
 - Full-bleed atmosfære (bilde/gradient som plan).
-- **BTB** som hero-nivå signal (evt. undertittel «Bar-til-bar»).
+- **BtB** som hero-nivå signal (evt. undertittel «Bar-til-bar»).
 - Én headline + én setning + CTA (**«Klar for kaos»** — uten login-krav).
 - Visuell anker: bar-scene SVG (`public/bar-scene.svg`), ikke kart.
 - Ingen kort-grid, ingen feature-stat-strips i første viewport.
@@ -159,7 +161,7 @@ Hovedskjerm under bruk (`/routes/[instanceId]`):
 
 - Norsk bokmål i UI.
 - **Domeneord (låst):**
-  - Merkevare → **BTB** (Bar-til-bar)
+  - Merkevare → **BtB** (Bar-til-bar)
   - Starte runde → **Klar for kaos** / **Start kvelden**
   - Barer / katalog → **Utesteder**
   - Oppgaver → **Utfordringer** (ikke «øvinger»)

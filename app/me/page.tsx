@@ -79,7 +79,7 @@ export default function MePage() {
     );
   }
 
-  const displayName = profile.name?.trim() || "BTB-bruker";
+  const displayName = profile.name?.trim() || "BtB-bruker";
   const initial = displayName.slice(0, 1).toUpperCase();
   const { completedNights, stopCount, distanceKm } = profile.stats;
 

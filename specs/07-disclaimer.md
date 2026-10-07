@@ -1,11 +1,11 @@
 # 07 — Ansvarsfraskrivelse
 
-**BTB** («Bar-til-bar») er et privat sideprosjekt / underholdningsprodukt. Ved bruk aksepterer du følgende:
+**BtB** («Bar-til-bar») er et privat sideprosjekt / underholdningsprodukt. Ved bruk aksepterer du følgende:
 
 ## Alder og alkohol
 
 - Tjenesten er ment for personer som er **18 år eller eldre**.
-- BTB oppfordrer til ansvarlig alkoholbruk. Vi selger ikke alkohol og er ikke ansvarlige for valg du tar ute.
+- BtB oppfordrer til ansvarlig alkoholbruk. Vi selger ikke alkohol og er ikke ansvarlige for valg du tar ute.
 
 ## Innhold og utfordringer
 
@@ -16,7 +16,7 @@
 ## Barer og informasjon
 
 - Bar-data (åpningstider, pris, lokasjon) er **kuratert etter beste evne** og kan være feil eller utdatert.
-- BTB er **ikke tilknyttet** barene som listes, med mindre annet er eksplisitt sagt.
+- BtB er **ikke tilknyttet** barene som listes, med mindre annet er eksplisitt sagt.
 - Estimat for tid og avstand er **veiledende**, ikke en garanti.
 
 ## Gjesterunde og lagring
@@ -26,7 +26,7 @@
 
 ## Ansvar
 
-- BTB leveres «som den er», uten garanti om oppetid, nøyaktighet eller egnethet.
+- BtB leveres «som den er», uten garanti om oppetid, nøyaktighet eller egnethet.
 - Så langt loven tillater, er utvikler/eier ikke erstatningsansvarlig for indirekte tap, skade eller hendelser som oppstår under bruk av tjenesten ute i byen.
 
 ## Kontakt

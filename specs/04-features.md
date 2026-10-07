@@ -127,7 +127,7 @@ Gjelder både etter auto-forslag og ved manuell bygging (`/routes/new`):
 | **Ny rute** | Shuffle-knapp i «Din rute»; ny `seed` → nytt forslag med samme stoppantall og options |
 | **Options** | Knapp ved «Ny rute»; maks ølpris, min. rating, uten-dag (dropdown), tidsvindu (se over) |
 | **Populære ruter** | Knapp ved +/− åpner **popup-meny** med kuraterte favoritt-runder; lukkes ved valg eller klikk utenfor |
-| **Endre rekkefølge** | Dra-og-slipp eller opp/ned-kontroller; `barIds` (og parallell `stopDwellMinutes`) permuteres |
+| **Endre rekkefølge** | Opp/ned-kontroller; `barIds` (og parallell `stopDwellMinutes`) permuteres |
 | **Fjerne stopp** | Fjern fra listen; minst **2 stopp** før start (under → disable «Start kvelden» / vis melding) |
 | **Legge til stopp** | Fra katalog (toggle) eller eget stopp. Katalog viser **alle** etter filter. Mismatch (pris/rating/åpningstid) → bekreftelsesdialog før add |
 | **Rating** | Under navn på stopp i «Din rute» (kuratert `rating` 1–5 + `ratingCount`) |
@@ -270,7 +270,7 @@ Vi overlevde
 
 | Rute | Jobb |
 |------|------|
-| `/` | Landing: **BTB** + CTA **«Klar for kaos»** (uten krav om login) |
+| `/` | Landing: **BtB** + CTA **«Klar for kaos»** (uten krav om login) |
 | `/disclaimer` eller modal | 18+ / ansvar — lenke til [07-disclaimer.md](07-disclaimer.md) |
 | `/personvern` | [08-privacy.md](08-privacy.md) |
 | `/sign-in`, `/sign-up` | Auth (+ claim gjest) |

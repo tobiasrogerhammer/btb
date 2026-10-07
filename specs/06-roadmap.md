@@ -119,7 +119,7 @@ Etter at innlogging virker i prod: én skjerm som blander **profil** og **egen s
 | 2026-09-22 | Tone: 20–25, inkluderende humor; UI: emne / øvinger / bestått |
 | 2026-09-22 | Historikk + replay: samme barIds/challengeIds; snapshot på instance |
 | 2026-09-22 | MVP: estimat tid/avstand (5 km/t + 30 min/stopp); fase 1.5: valgfri stopptid + varsel |
-| 2026-09-22 | Merkevare **BTB**; fullføre = **Bestått**; disclaimer + personvern |
+| 2026-09-22 | Merkevare **BtB**; fullføre = **Bestått**; disclaimer + personvern |
 | 2026-09-22 | Gjesterunde uten konto; recap/collage; auto-slett dagen etter; lagring krever claim |
 | 2026-09-22 | Etter forslag: endre rekkefølge + fjerne stopp (samme builder som manuell) |
 | 2026-09-27 | Rute-options: maks ølpris per stopp, min. rating, tidsvindu; ingen aldersgrense-filter |

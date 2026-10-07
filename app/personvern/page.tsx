@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AppShell, BackLink } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Personvernerklæring — BTB",
+  title: "Personvernerklæring — BtB",
 };
 
 export default function PrivacyPage() {
@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         Personvernerklæring
       </h1>
       <p className="mt-2 text-sm text-[var(--muted)]">
-        Denne erklæringen gjelder BTB («Bar til bar») og beskriver hvilke
+        Denne erklæringen gjelder BtB («Bar til bar») og beskriver hvilke
         personopplysninger vi behandler, hvorfor, og hvilke rettigheter du har.
       </p>
 
@@ -24,7 +24,7 @@ export default function PrivacyPage() {
             1. Behandlingsansvarlig
           </h2>
           <p>
-            Behandlingsansvarlig er eier av BTB-prosjektet. Kontaktopplysninger
+            Behandlingsansvarlig er eier av BtB-prosjektet. Kontaktopplysninger
             (navn og e-post) oppgis i appen ved offentlig lansering. Inntil
             da gjelder denne erklæringen for tjenesten som kjøres i
             utviklings-/MVP-fase.

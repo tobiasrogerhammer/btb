@@ -15,9 +15,25 @@ const display = Syne({
   variable: "--font-display",
 });
 
+const siteUrl = "https://btb.tobiashammer.dev";
+
 export const metadata: Metadata = {
-  title: "BTB — Bar til bar",
-  description: "Your next bar is one tap away.",
+  metadataBase: new URL(siteUrl),
+  title: "BtB — Bar til bar",
+  description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
+  openGraph: {
+    type: "website",
+    locale: "nb_NO",
+    url: siteUrl,
+    siteName: "BtB",
+    title: "BtB — Bar til bar",
+    description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BtB — Bar til bar",
+    description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
+  },
 };
 
 export default function RootLayout({

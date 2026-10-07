@@ -1,6 +1,6 @@
 # 08 — Personvernerklæring
 
-Denne erklæringen gjelder **BTB** («Bar-til-bar»). Den beskriver hvilke personopplysninger vi behandler, hvorfor, og hvilke rettigheter du har.
+Denne erklæringen gjelder **BtB** («Bar-til-bar»). Den beskriver hvilke personopplysninger vi behandler, hvorfor, og hvilke rettigheter du har.
 
 Behandlingsansvarlig: eier av prosjektet (navn/kontakt fylles inn ved offentlig launch).
 

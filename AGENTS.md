@@ -1,4 +1,4 @@
-# AGENTS.md — BTB (Bar-til-bar)
+# AGENTS.md — BtB (Bar-til-bar)
 
 Du jobber i et **spec-drevet** prosjekt. Les specs før du skriver kode.
 
@@ -21,10 +21,10 @@ Alt under [`specs/`](specs/README.md):
 2. **Endre spec før scope-creep** — hvis brukeren ber om noe utenfor fase, oppdater spec/roadmap først (eller spør).
 3. **Stack er låst:** Next.js + Convex + Convex Auth + Tailwind.
 4. **Datamodell:** tidsstempler, `mode`, `guestSessions` + utløp, estimat-felter — fra start.
-5. **Design:** [05-design.md](specs/05-design.md) — **BTB**, Lucide, «Vi overlevde», unngå AI-klisjeer.
+5. **Design:** [05-design.md](specs/05-design.md) — **BtB**, Lucide, «Vi overlevde», unngå AI-klisjeer.
 6. **UI Skills:** før UI-arbeid, `npx ui-skills` via [`.cursor/skills/ui-skills`](.cursor/skills/ui-skills). Specs overstyrer skill-defaults.
 7. **Convex-praksis:** validators, auth **eller** gyldig gjeste-token, indekser, await, ingen `Date.now()` i queries.
-8. **Språk i UI:** norsk bokmål. Domene: BTB, utfordringer, «Vi overlevde» / «Klar for kaos» — ikke school-/øving-tema.
+8. **Språk i UI:** norsk bokmål. Domene: BtB, utfordringer, «Vi overlevde» / «Klar for kaos» — ikke school-/øving-tema.
 9. **Tone:** inkluderende studenthumor (20–25); se product-spec.
 10. **Gjest:** kan fullføre uten konto; recap; data slettes dagen etter; lagring = claim til bruker.
 

@@ -1,6 +1,6 @@
-# BTB — specs
+# BtB — specs
 
-Blueprint for **BTB** («Bar-til-bar»). Utvikling er **spec-drevet**: les og følg disse filene før du implementerer.
+Blueprint for **BtB** («Bar-til-bar»). Utvikling er **spec-drevet**: les og følg disse filene før du implementerer.
 
 ## Leserekkefølge
 

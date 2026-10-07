@@ -18,7 +18,7 @@ Dette prosjektet styres av filene i `specs/`. De er source of truth for produkt,
 - Stack: Next.js (App Router) + Convex + Convex Auth + Tailwind
 - MVP: solo-flyt; ikke gruppe/konkurranse ennå
 - Bar-data: manuelt kuratert Trondheim-seed
-- UI-språk: norsk bokmål — BTB, utfordringer, «Vi overlevde» (ikke school-/øving-tema)
+- UI-språk: norsk bokmål — BtB, utfordringer, «Vi overlevde» (ikke school-/øving-tema)
 - Gjesteflyt: uten konto OK; auto-slett dagen etter; lagring krever claim
 - Design: følg `specs/05-design.md`
 - Ansvar / personvern: `specs/07-disclaimer.md`, `specs/08-privacy.md`

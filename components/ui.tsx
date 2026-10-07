@@ -15,15 +15,18 @@ export function BrandMark({
     <span className="inline-flex items-center gap-2">
       <Image
         src="/logo.png"
-        alt=""
+        alt={withWordmark ? "" : "BtB"}
         width={size}
         height={Math.round(size * (150 / 169))}
         className="shrink-0"
         priority
       />
       {withWordmark && (
-        <span className="font-[family-name:var(--font-display)] text-lg font-semibold tracking-tight">
-          BTB
+        <span
+          className="font-[family-name:var(--font-display)] font-semibold tracking-tight"
+          style={{ fontSize: Math.max(16, Math.round(size * 0.72)) }}
+        >
+          BtB
         </span>
       )}
     </span>
@@ -59,7 +62,7 @@ export function AppShell({
     <div className="flex min-h-dvh flex-col bg-[var(--bg)] text-[var(--text)]">
       {!hideNav && (
         <header className="mx-auto flex w-full max-w-md items-center justify-between px-4 py-4">
-          <Link href="/" aria-label="BTB — hjem">
+          <Link href="/" aria-label="BtB — hjem">
             <BrandMark size={28} />
           </Link>
           <nav className="flex items-center gap-3">

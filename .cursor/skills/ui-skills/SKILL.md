@@ -14,7 +14,7 @@ Before UI-related work in this repo, route through [UI Skills](https://www.ui-sk
 Project specs beat generic skill defaults:
 
 - Colors: `--bg #121212`, `--brand #CC3F0C` — see `specs/05-design.md`
-- Brand: **BTB** (Bar-til-bar); copy: utfordringer / «Vi overlevde» / «Klar for kaos»
+- Brand: **BtB** (Bar-til-bar); copy: utfordringer / «Vi overlevde» / «Klar for kaos»
 - Icons: Lucide (`lucide-react`) only
 - Stack: Next.js App Router + Tailwind + Convex
 - Copy: norsk bokmål in UI

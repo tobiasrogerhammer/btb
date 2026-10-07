@@ -1,4 +1,4 @@
-# BTB (Bar-til-bar)
+# BtB (Bar-til-bar)
 
 Pub crawl-app — Next.js + Convex. Specs i [`specs/`](specs/README.md).
 

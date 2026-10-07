@@ -11,7 +11,7 @@ import {
   ReactNode,
 } from "react";
 
-const STORAGE_KEY = "btb_guest_token";
+const STORAGE_KEY = "BtB_guest_token";
 
 type GuestContextValue = {
   guestToken: string | null;

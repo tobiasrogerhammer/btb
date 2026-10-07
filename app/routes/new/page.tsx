@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ChevronDown,
+  ChevronUp,
   Clock,
-  GripVertical,
   Info,
   Minus,
   Plus,
@@ -177,7 +177,6 @@ export default function NewRoutePage() {
   const [manualEdit, setManualEdit] = useState(false);
   const [showPopular, setShowPopular] = useState(false);
   const [showCatalog, setShowCatalog] = useState(false);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [lastEstimateMinutes, setLastEstimateMinutes] = useState<number | null>(
     null,
   );
@@ -399,6 +398,10 @@ export default function NewRoutePage() {
     setManualEdit(true);
     setUsedSuggest(false);
     setLastEstimateMinutes(null);
+  }
+
+  function moveStop(index: number, delta: -1 | 1) {
+    reorder(index, index + delta);
   }
 
   function toggleBar(id: Id<"bars">) {
@@ -644,32 +647,35 @@ export default function NewRoutePage() {
                 timeWindow.windowStart,
               );
               return (
-              <li
-                key={bar._id}
-                className="py-2.5 first:pt-0"
-              >
-                <div className="flex items-start gap-2">
-                <button
-                  type="button"
-                  draggable
-                  aria-label={`Dra for å flytte ${bar.name}`}
-                  onDragStart={(e) => {
-                    setDragIndex(index);
-                    e.dataTransfer.effectAllowed = "move";
-                    e.dataTransfer.setData("text/plain", String(index));
-                  }}
-                  onDragEnd={() => setDragIndex(null)}
-                  className="inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-md text-[var(--muted)] active:cursor-grabbing"
-                >
-                  <GripVertical className="size-4" aria-hidden />
-                </button>
+              <li key={bar._id} className="py-3 first:pt-1">
+                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 flex-col">
+                  <button
+                    type="button"
+                    aria-label={`Flytt ${bar.name} opp`}
+                    disabled={index === 0}
+                    onClick={() => moveStop(index, -1)}
+                    className="inline-flex size-7 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--text)] disabled:opacity-25"
+                  >
+                    <ChevronUp className="size-4" aria-hidden />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Flytt ${bar.name} ned`}
+                    disabled={index === ordered.length - 1}
+                    onClick={() => moveStop(index, 1)}
+                    className="inline-flex size-7 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--text)] disabled:opacity-25"
+                  >
+                    <ChevronDown className="size-4" aria-hidden />
+                  </button>
+                </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm leading-snug text-[var(--text)]">
+                  <p className="truncate text-base font-medium leading-tight tracking-tight text-[var(--text)]">
                     {bar.name}
                   </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] leading-none text-[var(--muted)]">
                     {bar.rating != null && (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                      <span className="inline-flex items-center gap-0.5">
                         <Star
                           className="size-2.5 fill-[#F5C518] text-[#F5C518]"
                           aria-hidden
@@ -678,24 +684,24 @@ export default function NewRoutePage() {
                           {bar.rating.toFixed(1).replace(".", ",")}
                         </span>
                         {bar.ratingCount != null && (
-                          <span className="tabular-nums text-[var(--muted)]/70">
+                          <span className="tabular-nums opacity-70">
                             ({bar.ratingCount})
                           </span>
                         )}
                       </span>
                     )}
                     {bar.beerPrice != null && (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                      <span className="inline-flex items-center gap-0.5">
                         <Beer className="size-2.5" aria-hidden />
                         <span className="tabular-nums">{bar.beerPrice} kr</span>
                       </span>
                     )}
                     {hoursLabel && (
                       <span
-                        className={`inline-flex items-center gap-0.5 text-[11px] leading-none ${
+                        className={`inline-flex items-center gap-0.5 ${
                           showHoursWarning
                             ? "font-medium text-[#F59E0B]"
-                            : "text-[var(--muted)]"
+                            : ""
                         }`}
                         title={
                           showHoursWarning ? (hoursWarning ?? undefined) : undefined
@@ -717,23 +723,25 @@ export default function NewRoutePage() {
                     )}
                   </div>
                 </div>
-                <a
-                  href={mapsPlaceUrl(bar)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Vis ${bar.name} i Google Maps`}
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--brand)]"
-                >
-                  <MapsPlaceIcon className="size-5" />
-                </a>
-                <button
-                  type="button"
-                  aria-label="Fjern"
-                  onClick={() => removeAt(index)}
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md p-1 text-red-500 transition hover:bg-red-500/10 hover:text-red-400"
-                >
-                  <X className="size-5" />
-                </button>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <a
+                    href={mapsPlaceUrl(bar)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Vis ${bar.name} i Google Maps`}
+                    className="inline-flex size-9 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--brand)]"
+                  >
+                    <MapsPlaceIcon className="size-5" />
+                  </a>
+                  <button
+                    type="button"
+                    aria-label="Fjern"
+                    onClick={() => removeAt(index)}
+                    className="inline-flex size-9 items-center justify-center rounded-md text-red-500/90 transition hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
                 </div>
               </li>
               );
@@ -897,7 +905,7 @@ export default function NewRoutePage() {
                         }
                         className="min-w-0 flex-1 text-left"
                       >
-                        <p className="truncate text-sm leading-snug text-[var(--text)]">
+                        <p className="truncate text-base font-medium leading-tight tracking-tight text-[var(--text)]">
                           {bar.name}
                         </p>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">

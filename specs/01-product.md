@@ -2,7 +2,7 @@
 
 ## Navn
 
-**BTB** — kort for **Bar-til-bar**.
+**BtB** — kort for **Bar-til-bar**.
 
 Pub crawl-app med ruteforslag og utfordringer per stopp.
 
