@@ -17,9 +17,13 @@ const display = Syne({
 
 const siteUrl = "https://nextround.no";
 
-/** Stable public URL for link previews (avoid crawler issues with hashed asset paths). */
+/**
+ * Public URL for link previews.
+ * Rename/version this path when the asset changes — iMessage/Slack/Meta cache by URL
+ * and will keep the old image even after browser history is cleared.
+ */
 const shareImage = {
-  url: "/og-image.png",
+  url: "/og-share.png",
   width: 1200,
   height: 630,
   alt: "NextRound - Bar til bar",

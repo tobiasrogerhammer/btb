@@ -36,7 +36,7 @@ export function BrandMark({
 
   return (
     <Image
-      src="/nextround-logo-white.png"
+      src="/nextround-wordmark.png"
       alt="nextround"
       width={wordmarkWidth}
       height={wordmarkHeight}

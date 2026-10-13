@@ -72,9 +72,9 @@ Brand `#CC3F0C` er den eneste sterke accenten. Ingen lilla. Hold paletten kort.
 Fra `nextround-logopakke` (full pakke speilet i [`public/brand/`](../public/brand/)):
 
 - **Merke** (`n` + `o` i ett): [`public/logo.png`](../public/logo.png) / `.svg` — brukes i favicon, app-ikon, delebilde-hjørne.
-- **Wordmark** (hvit + oransje o): [`public/nextround-logo-white.png`](../public/nextround-logo-white.png) — `BrandMark` i nav.
+- **Wordmark** (hvit + oransje o): [`public/nextround-wordmark.png`](../public/nextround-wordmark.png) — `BrandMark` i nav. (`nextround-logo-white.png` er helt hvit — ikke bruk i nav.)
 - **App-ikoner:** `app/favicon.ico`, `app/favicon.svg`, `app/icon.png` / `.svg`, `app/apple-icon.png` / `.svg`.
-- **OG / sosial:** [`public/og-image.png`](../public/og-image.png) (1200×630, «Klar for kaos?») + metadata i `app/layout.tsx`.
+- **OG / sosial:** [`public/og-share.png`](../public/og-share.png) (1200×630, «Klar for kaos?») + metadata i `app/layout.tsx`. Bytt filnavn ved oppdatering — iMessage/Slack/Meta cacher på URL.
 - Landing hero er display-«Bar til bar» uten logo over.
 
 ## Delebilde (eksport av kveld)
