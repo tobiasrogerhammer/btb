@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import { AppShell, BackLink } from "@/components/ui";
 
+const title = "Ansvarsfraskrivelse";
+const description =
+  "Vilkår for bruk av nextround — alder, alkoholansvar og begrensninger i tjenesten.";
+
 export const metadata: Metadata = {
-  title: "Ansvarsfraskrivelse — NextRound",
+  title,
+  description,
+  openGraph: { title: `${title} — NextRound`, description },
+  twitter: { title: `${title} — NextRound`, description },
 };
 
 export default function DisclaimerPage() {

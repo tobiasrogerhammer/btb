@@ -20,15 +20,18 @@ const siteUrl = "https://nextround.no";
 /** Stable public URL for link previews (avoid crawler issues with hashed asset paths). */
 const shareImage = {
   url: "/og-image.png",
-  width: 1024,
-  height: 537,
+  width: 1200,
+  height: 630,
   alt: "NextRound - Bar til bar",
   type: "image/png",
 } as const;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "NextRound - Bar til bar",
+  title: {
+    default: "NextRound - Bar til bar",
+    template: "%s — NextRound",
+  },
   description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
   openGraph: {
     type: "website",

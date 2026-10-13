@@ -4,8 +4,10 @@ import { ArrowLeft, Martini, Route } from "lucide-react";
 import { ReactNode } from "react";
 import { AccountNavLink } from "@/components/AccountNavLink";
 
-/** Wordmark asset: 300×52 */
-const WORDMARK_ASPECT = 300 / 52;
+/** Wordmark asset: 1800×313 (hvit + oransje o). */
+const WORDMARK_ASPECT = 1800 / 313;
+/** Merke asset: 1024×925 (n-bue + o). */
+const MERKE_ASPECT = 1024 / 925;
 
 export function BrandMark({
   size = 28,
@@ -14,15 +16,30 @@ export function BrandMark({
   size?: number;
   withWordmark?: boolean;
 }) {
-  const wordmarkHeight = Math.max(14, Math.round(size * 0.72));
+  if (!withWordmark) {
+    const height = size;
+    const width = Math.round(height * MERKE_ASPECT);
+    return (
+      <Image
+        src="/logo.png"
+        alt="nextround"
+        width={width}
+        height={height}
+        className="shrink-0"
+        priority
+      />
+    );
+  }
+
+  const wordmarkHeight = Math.max(16, Math.round(size * 0.72));
   const wordmarkWidth = Math.round(wordmarkHeight * WORDMARK_ASPECT);
 
   return (
     <Image
       src="/nextround-logo-white.png"
       alt="nextround"
-      width={withWordmark ? wordmarkWidth : size}
-      height={withWordmark ? wordmarkHeight : Math.round(size / WORDMARK_ASPECT)}
+      width={wordmarkWidth}
+      height={wordmarkHeight}
       className="shrink-0"
       priority
     />
@@ -80,7 +97,9 @@ export function AppShell({
           </nav>
         </header>
       )}
-      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-10">{children}</main>
+      <main className="mx-auto w-full max-w-md flex-1 px-4 pb-10">
+        {children}
+      </main>
       {!hideNav && (
         <footer className="mx-auto mt-auto w-full max-w-md border-t border-white/5 px-4 py-6 text-xs text-[var(--muted)]">
           <div className="flex gap-5">

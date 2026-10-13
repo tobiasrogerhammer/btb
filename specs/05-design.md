@@ -69,10 +69,17 @@ Brand `#CC3F0C` er den eneste sterke accenten. Ingen lilla. Hold paletten kort.
 
 ## Logo
 
-- Fil: [`public/logo.png`](../public/logo.png) — geometrisk merke (bue + prikk) i brand-oransje på mørk bakgrunn.
-- Favicon: `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png` (generert fra `public/logo.png`).
-- Bruk i nav (`BrandMark`: `public/nextround-logo-white.png` — hvit «n» først i navnet, oransje sirkel som «o»). Favicon beholder det geometriske merket. Landing hero er display-«Bar til bar» uten logo over.
-- **Link-deling:** `public/og-image.png` + eksplisitt `openGraph.images` / `twitter.images` i `app/layout.tsx` (`metadataBase` = `https://nextround.no`). Uten dette faller mange plattformer tilbake til Vercel-default. (Nytt OG-bilde: se [09-rebrand-nextround.md](09-rebrand-nextround.md).)
+Fra `nextround-logopakke` (full pakke speilet i [`public/brand/`](../public/brand/)):
+
+- **Merke** (`n` + `o` i ett): [`public/logo.png`](../public/logo.png) / `.svg` — brukes i favicon, app-ikon, delebilde-hjørne.
+- **Wordmark** (hvit + oransje o): [`public/nextround-logo-white.png`](../public/nextround-logo-white.png) — `BrandMark` i nav.
+- **App-ikoner:** `app/favicon.ico`, `app/favicon.svg`, `app/icon.png` / `.svg`, `app/apple-icon.png` / `.svg`.
+- **OG / sosial:** [`public/og-image.png`](../public/og-image.png) (1200×630, «Klar for kaos?») + metadata i `app/layout.tsx`.
+- Landing hero er display-«Bar til bar» uten logo over.
+
+## Delebilde (eksport av kveld)
+
+1080 × 1920, bakgrunn `--bg` med svak brand-gradient nederst. Kveldsnavn (Syne) øverst til venstre, merke (`public/logo.png`, n-bue + o) øverst til høyre. Collage med 16 px avrundede hjørner, 8 px mellomrom, stedsnavn (Syne) på mørk gradient nederst i hvert bilde. Utfordringer som rader på `--surface` med brand-fylt hake-sirkel og tekst i DM Sans (uten stedsnavn). Footer: kun nextround.no (dempet, ingen «Vi overlevde»). Kun brand `#CC3F0C` som accent. Funksjonsbeskrivelse: [04-features.md](04-features.md) → «Eksport av kveld».
 
 ## Rutebygger / foreslått runde
 
@@ -96,9 +103,9 @@ Etter forslag eller under manuell bygging (`/routes/new`):
 
 - Kart over listen: dekorativ Trondheim-SVG, ikke interaktiv; myk fade inn i sidebakgrunn (`--bg`). Innhold under kartet uten egen surface-boks.
 - **Options** (Lucide `SlidersHorizontal`) ved siden av «Ny rute»: inline panel uten egen boks/border; maks ølpris, min. rating, **uten-dag** (`<select>`-dropdown, man–søn, default = dagens ukedag i Oslo), tidsvindu (fra–til) — norsk copy.
-- Stopp-rad i «Din rute»: flat liste med **separatorer** (ikke egne bokser). Vertikalt sentrert rad: **navn** (primær) · meta under (rating, ølpris, åpningstid) · kart/fjern. Ved mismatch: åpningstid i amber + Lucide `AlertTriangle`.
+- Stopp-rad i «Din rute»: flat liste med **separatorer** (ikke egne bokser). Vertikalt sentrert rad: **navn** (primær) · meta under (rating, ølpris, åpningstid) · kart/fjern. Delvis mismatch → amber + `AlertTriangle`; **helt utenfor** → **rød** åpningstid + `AlertTriangle`. Vis alltid klokkeslett (aldri «Stengt nå»).
 - **Populære ruter:** popup-meny over knappen (ikke inline-liste); lukkes ved valg / klikk utenfor.
-- Katalog («Alle stopp»): **alltid synlig liste** (ikke accordion/dropdown). Samme rad-layout som «Din rute» (navn; under: rating, ølpris, åpningstid). Delvis mismatch → amber + `AlertTriangle`; **helt utenfor** tidsvindu → **rød** åpningstid + `AlertTriangle`. Bekreftelsesdialog ved add som bryter pris/rating/åpningstid.
+- Katalog («Alle stopp»): **alltid synlig liste** (ikke accordion/dropdown). Rekkefølge: valgte stopp først, deretter **sortert etter filtertreff** (best match øverst: pris, rating, åpningstid i vinduet; helt stengt nederst), så rating ↓, ølpris ↑, navn. Samme rad-layout som «Din rute» (navn; under: rating, ølpris, åpningstid). Delvis mismatch → amber + `AlertTriangle`; **helt utenfor** tidsvindu → **rød** åpningstid + `AlertTriangle` (rød farge = nok varsel; vis klokkeslett, ikke «Stengt nå»). Bekreftelsesdialog ved add som bryter pris/rating/åpningstid.
 - Rekkefølge: opp/ned-kontroller (Lucide `ChevronUp` / `ChevronDown`).
 - Fjern: tydelig, tommelvennlig — ikke gjemt i swipe-only.
 - Estimat i «Din rute»-header oppdateres live.
@@ -166,10 +173,11 @@ Hovedskjerm under bruk (`/routes/[instanceId]`):
   - Barer / katalog → **Utesteder**
   - Oppgaver → **Utfordringer** (ikke «øvinger»)
   - Fullføre → **Vi overlevde**
+- **Innlogging (`/sign-in`):** innhold vertikalt sentrert i viewport (under nav). Større display-tittel, engasjerende støtte-setning (wordmark kun i nav; «Lagre kvelden»-eyebrow kun i claim-flyt). Svak brand-glow bak som atmosfære. Primær CTA: hvit «Logg inn med Google» med offisiell flerfarget Google-G. Deretter «eller med e-post»; felter med labels. Feil ved `role="alert"`. Toggle understreket, sentrert.
 - **Navbar:** rute-ikon (`/routes/new`, aria-label «Min rute») · martini-ikon (`/bars`, aria-label «Utesteder») · profil-ikon i sirkel (`/me` innlogget / `/sign-in` utlogget, aria-label «Konto»)
 - Korte verb ellers: «Sjekk inn», «Huk av», «Neste stopp», «Legg til stopp».
 - Recap: «Vi overlevde» + «Gi kvelden et navn» + collage + utfordringer; gjest: «Lagres ikke uten bruker — slettes i morgen».
-- **Min profil (`/me`, fase 1.5.1):** én komposisjon — header (avatar + navn + stats) → kveldsfeed (ikke dashboard-grid). Flat liste med separatorer / lette rader; cards kun der rad er trykkbar interaksjon. Copy: «Min profil», «Mine kvelder», «Logg ut», «Slett konto». Ingen follower-UI eller «sosialt nettverk»-chrome.
+- **Min profil (`/me`, fase 1.5.1):** én komposisjon — header (avatar + navn + stats) → kveldsfeed (ikke dashboard-grid). Flat liste med separatorer / lette rader; cards kun der rad er trykkbar interaksjon. Copy: «Min profil», «Mine kvelder», «Logg ut», «Slett konto». Ingen follower-UI eller «sosialt nettverk»-chrome. Fullførte kvelder åpnes som popup (`RecapDialog`, native `<dialog>`: overlay `black/60` uten blur, `--surface`-kort med `rounded-2xl`, maks ~78dvh og scroll inni, sticky topplinje med kryss øverst til venstre, 160 ms fade+scale inn (av ved reduced motion)). Profilen er synlig rundt.
 - Microcopy og builtin-utfordringer: se tone i [01-product.md](01-product.md). Unngå school-/emne-terminologi i utfordringstekster.
 - Footer: lenker til ansvar og personvern.
 - Kode/API: engelske termer (`challenges`, `routeInstances`, `guestSessions`).

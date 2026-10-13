@@ -128,6 +128,8 @@ export default defineSchema({
     barId: v.id("bars"),
     orderIndex: v.number(),
     completedChallengeIds: v.array(v.id("challenges")),
+    photoStorageIds: v.optional(v.array(v.id("_storage"))),
+    /** Utfaset: ett bilde. Les via `logPhotoIds`. */
     photoStorageId: v.optional(v.id("_storage")),
     checkedInAt: v.number(),
     plannedDwellMinutes: v.optional(v.number()),

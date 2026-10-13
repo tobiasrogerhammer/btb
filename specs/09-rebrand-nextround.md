@@ -75,8 +75,8 @@ Eksempel på utfylt rad: Ny verdi = `NextRound`
 
 | Felt              | Hva det er             | Nå                                    | Ny verdi / beslutning |
 | ----------------- | ---------------------- | ------------------------------------- | --------------------- |
-| Logo-fil          | Ikon i nav og favicon  | `public/logo.png` (oransje bue+prikk) | Behold                |
-| Delingsbilde (OG) | Bilde når lenken deles | `public/og-image.png`                 | ny fil                |
+| Logo-fil          | Ikon i nav og favicon  | Merke + wordmark fra logopakke        | **Ferdig** (`public/brand/`, `app/icon*`) |
+| Delingsbilde (OG) | Bilde når lenken deles | `public/og-image.png`                 | **Ferdig** (1200×630) |
 | Brand-farge       | CSS `--brand`          | `#CC3F0C`                             |                       |
 | Bakgrunnsfarge    | CSS `--bg`             | `#121212`                             |                       |
 
@@ -155,7 +155,7 @@ Når alt over er fylt ut (eller merket «behold»):
 - [x] Kode + specs oppdatert ut fra dette dokumentet (2026-10-13)
 
 **Gjenstår utenfor repo:**
-- Nytt `public/og-image.png` (skjema sa «ny fil» — ikke levert ennå)
+- [x] Nytt `public/og-image.png` fra logopakke (1200×630, «Klar for kaos?»)
 - Domene `nextround.no` (DNS + Vercel) — `metadataBase` peker allerede dit
 - OAuth / Analytics / cache (se seksjon 8)
 

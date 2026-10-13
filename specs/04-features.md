@@ -26,7 +26,7 @@
 | Valgfri tid per stopp + «gå videre»-varsel | Nei | Fase 1.5 |
 | Stopp: sjekk-inn + tidsstempel | Ja | — |
 | Stopp: avhuk utfordringer | Ja | — |
-| Stopp: bilde | Ja | — |
+| Stopp: bilder (3 per stopp, maks 20 per kveld) | Ja | — |
 | Auth (valgfritt til lagring) | Ja | — |
 | Gruppe delt fremgang | Nei | Fase 2 |
 | Konkurranse / poeng | Nei | Fase 3 |
@@ -115,7 +115,7 @@ Panel ved siden av «Ny rute» på `/routes/new`. Preferanser lever i **klient-s
 - **Auto-forslag** inkluderer steder **åpne minst ett tidspunkt** i tidsvinduet. ≤ 5 slike: melding «N utesteder åpne, utvid filter for fler valg». Under 2: fall tilbake til pris/rating-pool.
 - Er ikke alle foreslåtte stopp åpne hele vinduet: **smart rekkefølge etter åpningstid** (tidlig stenging / allerede åpent tidligere; sent åpnende senere). Ellers samme timer-baserte orden + nærmeste.
 - **Manuell katalog:** hele katalogen synlig. Mismatch (ingen overlap med vindu / pris / rating) → bekreftelsesdialog.
-- **Stopp i «Din rute»** uten full vindu-dekning: åpningstid i amber + varsel-ikon (ikke egen tekst ved navn).
+- **Stopp i «Din rute»** uten full vindu-dekning: åpningstid i amber + varsel-ikon; helt utenfor → rød åpningstid + varsel-ikon. Vis alltid klokkeslett (ikke «Stengt nå»).
 - **Aldersgrense (18/20) er ikke i scope.**
 
 ### Redigering av forslag / rute (MVP)
@@ -132,8 +132,8 @@ Gjelder både etter auto-forslag og ved manuell bygging (`/routes/new`):
 | **Legge til stopp** | Fra katalog (toggle) eller eget stopp. Katalog viser **alle** etter filter. Mismatch (pris/rating/åpningstid) → bekreftelsesdialog før add |
 | **Rating** | Under navn på stopp i «Din rute» (kuratert `rating` 1–5 + `ratingCount`) |
 | **Ølpris** | Under navn: veiledende `beerPrice` (NOK) med øl-ikon |
-| **Åpningstid** | Under navn: slot for uten-dagen. Mismatch → åpningstid i amber + `AlertTriangle` (klokke byttes); tooltip/sr-only for «Åpner snart» / «Stenger snart» |
-| **Statusbar** | Sticky topp på aktiv runde: stopp-progress, tid brukt, innstillinger |
+| **Åpningstid** | Under navn: klokkeslett for uten-dagen (aldri «Stengt nå»). Delvis mismatch → amber + `AlertTriangle`; helt utenfor → rød + `AlertTriangle`; tooltip/sr-only for «Åpner snart» / «Stenger snart» / «Ikke åpent i tidsvinduet» |
+| **Statusbar** | Sticky topp på aktiv runde: stopp-progress, tid brukt, innstillinger. Meny: «Legg til stopp», **«Stopp runde»** (tilbake til forsiden, fremgang beholdes), **«Slett runde»** (sletter instance + bilder; bruker eller gjest via `routes.deleteInstance`) — ikke «Avslutt runde» |
 | **Kart** | Ikon åpner Google Maps sted-/profilvisning via `googlePlaceId` (`query_place_id`; fallback navn/adresse, deretter coords — ikke turn-by-turn) |
 | **Estimat** | Rekalkuleres umiddelbart ved reorder/add/remove |
 
@@ -173,6 +173,7 @@ Beregnes for template/instance når `barIds` endres, og vises i rutebygger, fors
 
 - Ved start: snapshot relevante utfordringer inn i `template.challengeIds` / `instance.challengeIds` (bar-spesifikke for stoppene + generiske + evt. egne valgte).
 - På stopp: vis **maks 3 foreslåtte** utfordringer (bar-spesifikke først, deretter generiske rotert per stopp).
+- **«Se alle»** (til høyre for overskriften) åpner en popup med alle relevante utfordringer for stoppet (bar-spesifikke + generiske + egne). Huking i popupen bruker samme `toggleChallenge`; hukede utfordringer som ikke er blant de tre foreslåtte **legges til i stopplisten**, og gjennomførte sorteres øverst.
 - Bruker kan **opprette egen utfordring** (`source: user`, knyttet til aktuelt stopp) — appendes til `instance.challengeIds` og vises alltid på det stoppet (i tillegg til foreslåtte).
 - Avhuk lagres på `stopLogs.completedChallengeIds`.
 - Ingen server-side «bevis» utover bilde (valgfritt) og tidsstempel.
@@ -184,7 +185,8 @@ Beregnes for template/instance når `barIds` endres, og vises i rutebygger, fors
 |----------|--------|
 | Første check-in på stopp | Opprett `stopLog`, sett `checkedInAt = now` |
 | Toggle utfordring | Oppdater array + `updatedAt` |
-| Last opp bilde | `generateUploadUrl` → lagre → sett `photoStorageId` |
+| Last opp bilde | `generateUploadUrl` → lagre → `attachPhoto` legger til i `photoStorageIds`. **Maks 3 bilder per stopp og 20 per kveld** (server avviser og sletter filen; klient skjuler opplasting når grensen er nådd og viser «Maks 20 bilder nådd»). Uten bilde: stor opplastingsflate. Med bilde: bildet vises **stort i full bredde**, og «Ta / last opp» er en **smal, bred knapp under bildet** (ikke oppfordre til flere; ingen teller). Knappen vises så lenge stoppet har < 3 bilder |
+| Fjern bilde (mens runden pågår) | `stopLogs.removePhoto` (med `storageId`) sletter filen fra storage og fjerner den fra `photoStorageIds`; kryss-knapp (Lucide `X`, «Fjern bilde») øverst til høyre på bildet i runde-visningen; bare for `active` instance. Deretter kan nytt bilde lastes opp. Hvert bilde har eget kryss |
 | Legg til stopp på aktiv runde | Append `barId` på `instance.barIds` (eksisterende eller nyopprettet) |
 | Fullfør runde | Sett `completed` + `completedAt`; gjest: sett `expiresAt` |
 | «Vi overlevde» → Recap | Vis collage + utfordringer (Flyt G) |
@@ -210,7 +212,7 @@ Navbar «Konto» → innlogget: /me · utlogget: /sign-in
   → Profil-header (avatar, navn, korte stats)
   → Feed: tidligere / aktive kvelder (kort)
   → Åpne kveld → aktiv runde eller recap
-  → «Ta på nytt» på fullførte
+  → «Ta ruten på nytt :P» inne i kveldspopupen (ikke egen knapp under hver kveld i listen)
   → Konto: logg ut · slett konto (bekreft)
 ```
 
@@ -220,7 +222,7 @@ Navbar «Konto» → innlogget: /me · utlogget: /sign-in
 |-----|----------------|
 | **Profil** | Visningsnavn + avatar fra auth (`users.name`, `users.image`). E-post kun for eier (ikke i «sosial»-del). |
 | **Stats** | Antall fullførte kvelder · antall stopp (check-ins) · sum gang-km (fra lagrede estimat). Kun tall — ikke leaderboard. |
-| **Kveldsfeed** | Kronologisk liste (nyeste først): navn, status, stoppantall, estimat, dato. Fullførte: valgfri bilde-thumb fra stopLogs. CTA «Ta på nytt» / åpne recap. |
+| **Kveldsfeed** | Kronologisk liste (nyeste først): navn, status, stoppantall, estimat, dato. Fullførte: valgfri bilde-thumb fra stopLogs. Fullførte rader har en rund pil-knapp (Lucide `ChevronRight`) til høyre; trykk på raden åpner recap-popup (der «Ta ruten på nytt :P» ligger); ingen egen «Ta på nytt» under hver rad. |
 | **Konto** | Logg ut. Slett konto (sletter egne rute-data + auth-bruker iht. personvern). Lenker til ansvar / personvern. |
 
 ### Hva det *ikke* er (1.5.1)
@@ -259,12 +261,28 @@ Vi overlevde
   → Liste over hukede utfordringer (gruppert per stopp eller flat)
   → Kort oppsummering: antall stopp, tid brukt (fra startedAt→completedAt), estimat
   → Gjest: «Lagre kvelden — opprett bruker» + info om sletting dagen etter
-  → Innlogget: «Se mine kvelder» / «Ta på nytt»
+  → Rett etter «Vi overlevde»: oransje CTA «Lagre minner :)» (navn + lagre / claim / opprett bruker)
+  → Åpne lagret kveld fra «Mine kvelder»: oransje CTA «Ta ruten på nytt :P» (replay → ny aktiv instance); **navnet er kun tekst** (ikke input), uten «Vi overlevde»-label, **åpnes som popup (kompakt kort midt på skjermen, profilen synlig rundt) over `/me`** – ikke egen side – med kryss (Lucide `X`, aria-label «Lukk») øverst til venstre; lukkes også med Escape og trykk utenfor. Direktelenke `/routes/[id]/recap` fungerer fortsatt og viser samme innhold med kryss som går til `/me`
+  → Lagret kveld: rød «Slett kveld» (inline bekreftelse) → `routes.deleteInstance` sletter stopLogs, bilder, kveld og ubrukt mal; tilbake til `/me`
+  → Bilder i collage har **stedsnavnet nederst i bildet** (gradient-overlay)
+  → Under bildene: **tidslinje over stoppene** (oransje nummer-markør, stedsnavn i display-font, innsjekk-klokkeslett; «Ikke sjekket inn» for hoppet over) — uten adresse; **hukede utfordringer står under stoppet** de ble gjort på med oransje hake (ingen egen utfordringsseksjon)
 ```
 
 - Kveldsnavn settes **på recap**, ikke i rutebyggeren (`/routes/new`). Til midlertidig lagring brukes default «Min kveld».
-- Deling av recap (lenke/bilde) er nice-to-have, ikke MVP-krav.
-- Collage: enkel CSS-grid i MVP; fancy layout kan poleres senere.
+- Deling av recap som **delebilde** (se «Eksport av kveld» under) er med i fase 1.5.1. Deling som lenke er fortsatt utenfor scope.
+- Collage på skjermen: enkel CSS-grid.
+
+### Eksport av kveld (delebilde)
+
+Mål: eksporter en kveld som ett bilde til sosiale medier / andre apper.
+
+- **Knapp:** «Del kveld» (Lucide `Share` — firkant med pil ut) som ikon-knapp på recap, **til høyre for kveldsnavnet og «N stopp · N utfordringer huket av»** (over bildene). Vises kun når kvelden har minst ett bilde.
+- **Output:** PNG, **1080 × 1920** (story-format), generert **på klienten** med canvas (ingen ny avhengighet, ingen server-lagring).
+- **Levering:** `navigator.share({ files })` når støttet (mobil); ellers nedlasting av PNG.
+- **Innhold (topp → bunn):** kveldsnavn (venstre) + **brandmark** `public/logo.png` (merke: n-bue + o, **øverste høyre hjørne**) → **collage** → **gjennomførte utfordringer** → liten footer med nextround.no (ingen «Vi overlevde»-tekst).
+- **Collage:** opptil **9 bilder** (i stopp-rekkefølge; flere enn 9 → de 9 første). Layout tilpasses antall (1–9) slik at flaten alltid fylles uten tomrom: 1 stort, 2 side ved side, 3 = ett høyt + to stablet, 4 = 2×2, 5 = 2+3, 6 = 3+3, 7 = 2+2+3, 8 = 3+2+3, 9 = 3×3. Bildene beskjæres (cover). **Stedsnavn nederst i hvert bilde** (gradient-overlay).
+- **Utfordringer:** **maks 4** på delebildet. Ved «Del kveld» åpnes en velger (default: de **fire øverste** unike hukede i stopp-rekkefølge; samme utfordring vises bare én gang selv om den er huket på flere stopp); brukeren kan bytte hvilke som tas med (opptil 4). På bildet: oransje hake-merke og teksten (ikke sted). Har man gjort flere enn de som er med, vises «+ N utfordringer» under listen (N = antall hukede minus de som er med på bildet). 0 utfordringer → bilde uten utfordringsseksjon.
+- Ingen bilder → ingen eksportknapp (ingen tom collage).
 
 ## UI-skjermer (MVP)
 
@@ -275,7 +293,7 @@ Vi overlevde
 | `/personvern` | [08-privacy.md](08-privacy.md) |
 | `/sign-in`, `/sign-up` | Auth (+ claim gjest) |
 | `/me` | **Min profil** (Fase 1.5.1): profil + stats + kveldsfeed + konto — krever innlogging |
-| `/bars` | **Utesteder** — katalog + egne stopp |
+| `/bars` | **Utesteder** — katalog + egne stopp. **Liste:** stedsnavn i display-font (større); rating/pris/åpningstid dempet. **Åpningstid «nå»:** alltid klokkeslett (ikke «Stengt nå»); åpen → dempet + `Clock`; stengt → rød + `AlertTriangle`; stenger innen ~60 min → amber + `AlertTriangle`. **Filter:** toggle **Åpent nå** (`isOpenNow`; mangler åpningstid → inkludert). **Sortering:** Pris (lavest `beerPrice` først), Antall vurderinger (`ratingCount`), Rating (`rating`), **Kombo** (geometrisk snitt av normalisert pris + rating-kvalitet + log-skalert antall — mangler én faktor → bunnen; én sterk faktor alene holder ikke til topp) |
 | `/routes/new` | Bygg / foreslå; redigerbar liste (reorder, fjern, legg til); estimat — uten navn |
 | `/routes/[instanceId]` | Aktiv runde |
 | `/routes/[instanceId]/recap` | Navn + collage + utfordringer + lagre-CTA |
@@ -289,7 +307,7 @@ Vi overlevde
 - Offentlige profiler / følgere / sosial feed på tvers av brukere (fase 1.5.1 = kun egen feed).
 - Admin-UI for bar-kuratering (seed via mutation/script er nok).
 - Offline-first / PWA-krav (nice-to-have, ikke blocker).
-- Sosial deling av recap som bilde/story (kan komme raskt etter MVP).
+- Deling av recap som **lenke** (delebilde er med — se «Eksport av kveld»).
 
 ## Akseptansekriterier (MVP)
 

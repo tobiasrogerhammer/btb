@@ -160,6 +160,56 @@ export function isOpenNow(
   return openingHours.some((slot) => slotCoversOsloInstant(slot, day, mins));
 }
 
+export type HoursStatusNow = "unknown" | "open" | "closing_soon" | "closed";
+
+/** Minutter til tidligste stenging blant slots som dekker `now` (Oslo). */
+function minutesUntilClose(
+  openingHours: Array<OpeningSlot>,
+  now: number,
+): number | null {
+  const { day, mins } = osloDayAndMinutes(now);
+  const covering = openingHours.filter((slot) =>
+    slotCoversOsloInstant(slot, day, mins),
+  );
+  if (covering.length === 0) return null;
+
+  let minUntil = Infinity;
+  for (const slot of covering) {
+    const closeM = parseHmToMinutes(slot.close);
+    let until: number;
+    if (isOvernightSlot(slot)) {
+      if (slot.day === day) {
+        // Åpningsdag før midnatt → stenger neste kalenderdag
+        until = 24 * 60 - mins + closeM;
+      } else {
+        // Overnight-hale etter midnatt
+        until = closeM - mins;
+      }
+    } else {
+      until = closeM - mins;
+    }
+    if (until >= 0) minUntil = Math.min(minUntil, until);
+  }
+  return minUntil === Infinity ? null : minUntil;
+}
+
+/**
+ * Status for «nå» (Europe/Oslo).
+ * Mangler åpningstid → `unknown` (antas åpen i filtre via `isOpenNow`).
+ * `closing_soon` = åpen og stenger innen `soonMinutes` (default 60).
+ */
+export function hoursStatusForNow(
+  openingHours: Array<OpeningSlot> | undefined,
+  now: number,
+  soonMinutes = 60,
+): HoursStatusNow {
+  if (!openingHours || openingHours.length === 0) return "unknown";
+  if (!isOpenNow(openingHours, now)) return "closed";
+  const until = minutesUntilClose(openingHours, now);
+  if (until != null && until <= soonMinutes) return "closing_soon";
+  return "open";
+}
+
 const WINDOW_SAMPLE_MS = 15 * 60 * 1000;
 
 /**
@@ -414,18 +464,40 @@ export function slotsCoveringNow(
   return openingHours.filter((slot) => slotCoversOsloInstant(slot, day, mins));
 }
 
-/** Format opening hours line for aktiv runde; null if unknown. */
+function formatSlots(slots: OpeningSlot[]): string {
+  return slots.map((s) => `${s.open}–${s.close}`).join(", ");
+}
+
+/**
+ * Format opening hours for display; null if unknown.
+ * Always shows clock ranges (never «Stengt nå») — closed/mismatch is
+ * communicated with red/amber warning styling in the UI.
+ */
 export function formatHoursForNow(
   openingHours: Array<OpeningSlot> | undefined,
   now: number,
 ): string | null {
   if (!openingHours || openingHours.length === 0) return null;
   const covering = slotsCoveringNow(openingHours, now);
-  if (covering.length > 0) {
-    return covering.map((s) => `${s.open}–${s.close}`).join(", ");
-  }
+  if (covering.length > 0) return formatSlots(covering);
+
   const { day } = osloDayAndMinutes(now);
   const todays = openingHours.filter((h) => h.day === day);
-  if (todays.length === 0) return "Stengt nå";
-  return todays.map((s) => `${s.open}–${s.close}`).join(", ");
+  if (todays.length > 0) return formatSlots(todays);
+
+  // Closed this weekday — still show relevant hours (overnight from
+  // yesterday, else next open day in the week).
+  const prevDay = (day + 6) % 7;
+  const overnightFromPrev = openingHours.filter(
+    (h) => h.day === prevDay && isOvernightSlot(h),
+  );
+  if (overnightFromPrev.length > 0) return formatSlots(overnightFromPrev);
+
+  for (let offset = 1; offset <= 6; offset++) {
+    const d = (day + offset) % 7;
+    const next = openingHours.filter((h) => h.day === d);
+    if (next.length > 0) return formatSlots(next);
+  }
+
+  return null;
 }

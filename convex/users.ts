@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { getCurrentUserId, requireUserId } from "./lib/auth";
+import { logPhotoIds } from "./lib/photos";
 
 const nightValidator = v.object({
   _id: v.id("routeInstances"),
@@ -73,10 +74,11 @@ export const getProfile = query({
 
       let photoThumbUrl: string | null = null;
       for (const log of logs) {
-        if (log.photoStorageId) {
-          photoThumbUrl = await ctx.storage.getUrl(log.photoStorageId);
+        for (const storageId of logPhotoIds(log)) {
+          photoThumbUrl = await ctx.storage.getUrl(storageId);
           if (photoThumbUrl) break;
         }
+        if (photoThumbUrl) break;
       }
 
       nights.push({
@@ -128,8 +130,8 @@ async function deleteUserOwnedData(
       .withIndex("by_instance", (q) => q.eq("instanceId", inst._id))
       .collect();
     for (const log of logs) {
-      if (log.photoStorageId) {
-        await ctx.storage.delete(log.photoStorageId);
+      for (const storageId of logPhotoIds(log)) {
+        await ctx.storage.delete(storageId);
       }
       await ctx.db.delete(log._id);
     }

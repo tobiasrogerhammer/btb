@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell, BackLink } from "@/components/ui";
 
+const title = "Personvernerklæring";
+const description =
+  "Hvilke personopplysninger nextround behandler, hvorfor, og hvilke rettigheter du har.";
+
 export const metadata: Metadata = {
-  title: "Personvernerklæring — NextRound",
+  title,
+  description,
+  openGraph: { title: `${title} — NextRound`, description },
+  twitter: { title: `${title} — NextRound`, description },
 };
 
 export default function PrivacyPage() {

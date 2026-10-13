@@ -132,3 +132,4 @@ Etter at innlogging virker i prod: én skjerm som blander **profil** og **egen s
 | 2026-09-29 | Suggest: smart ruteorden etter åpningstid når ikke alle stopp er åpne i hele tidsvinduet |
 | 2026-10-05 | Fase 1.5.1: **Min profil** (`/me`) = profil + stats + egen kveldsfeed; ikke offentlige profiler/følgere |
 | 2026-10-13 | Rebrand **BtB** → **nextround**; domene mål = `nextround.no` (se [09-rebrand-nextround.md](09-rebrand-nextround.md)) |
+| 2026-10-13 | Delebilde av kveld (collage ≤ 9 bilder + utfordringer, 1080×1920 PNG, klient-generert) flyttet inn i fase 1.5.1; delelenke fortsatt utenfor |

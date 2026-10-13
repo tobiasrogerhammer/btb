@@ -17,6 +17,7 @@ import type * as guestSessions from "../guestSessions.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_geo from "../lib/geo.js";
+import type * as lib_photos from "../lib/photos.js";
 import type * as placesSync from "../placesSync.js";
 import type * as placesSyncActions from "../placesSyncActions.js";
 import type * as routes from "../routes.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/geo": typeof lib_geo;
+  "lib/photos": typeof lib_photos;
   placesSync: typeof placesSync;
   placesSyncActions: typeof placesSyncActions;
   routes: typeof routes;

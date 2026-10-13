@@ -1,6 +1,12 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { ownsResource, requireOwner } from "./lib/auth";
+import {
+  MAX_PHOTOS_PER_INSTANCE,
+  MAX_PHOTOS_PER_STOP,
+  logPhotoIds,
+} from "./lib/photos";
 
 export const listForInstance = query({
   args: {
@@ -14,8 +20,12 @@ export const listForInstance = query({
       barId: v.id("bars"),
       orderIndex: v.number(),
       completedChallengeIds: v.array(v.id("challenges")),
-      photoStorageId: v.optional(v.id("_storage")),
-      photoUrl: v.union(v.string(), v.null()),
+      photos: v.array(
+        v.object({
+          storageId: v.id("_storage"),
+          url: v.string(),
+        }),
+      ),
       checkedInAt: v.number(),
     }),
   ),
@@ -36,17 +46,17 @@ export const listForInstance = query({
 
     const result = [];
     for (const log of logs) {
-      let photoUrl: string | null = null;
-      if (log.photoStorageId) {
-        photoUrl = await ctx.storage.getUrl(log.photoStorageId);
+      const photos: { storageId: Id<"_storage">; url: string }[] = [];
+      for (const storageId of logPhotoIds(log)) {
+        const url = await ctx.storage.getUrl(storageId);
+        if (url) photos.push({ storageId, url });
       }
       result.push({
         _id: log._id,
         barId: log.barId,
         orderIndex: log.orderIndex,
         completedChallengeIds: log.completedChallengeIds,
-        photoStorageId: log.photoStorageId,
-        photoUrl,
+        photos,
         checkedInAt: log.checkedInAt,
       });
     }
@@ -85,8 +95,7 @@ export const checkIn = mutation({
     return await ctx.db.insert("stopLogs", {
       instanceId: args.instanceId,
       userId: owner.kind === "user" ? owner.userId : undefined,
-      guestSessionId:
-        owner.kind === "guest" ? owner.guestSessionId : undefined,
+      guestSessionId: owner.kind === "guest" ? owner.guestSessionId : undefined,
       barId: args.barId,
       orderIndex: args.orderIndex,
       completedChallengeIds: [],
@@ -142,7 +151,54 @@ export const generateUploadUrl = mutation({
   },
 });
 
+/**
+ * Legger til et bilde på stoppet. Maks 3 per stopp og 20 per kveld.
+ * Returnerer `false` (og sletter den opplastede filen) hvis grensen er nådd.
+ */
 export const attachPhoto = mutation({
+  args: {
+    stopLogId: v.id("stopLogs"),
+    storageId: v.id("_storage"),
+    guestToken: v.optional(v.string()),
+    now: v.number(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const log = await ctx.db.get(args.stopLogId);
+    if (!log) throw new Error("Stopp-logg ikke funnet");
+    const instance = await ctx.db.get(log.instanceId);
+    if (!instance) throw new Error("Emne ikke funnet");
+    const owner = await requireOwner(ctx, {
+      guestToken: args.guestToken,
+      now: args.now,
+    });
+    if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
+
+    const existing = logPhotoIds(log);
+    const allLogs = await ctx.db
+      .query("stopLogs")
+      .withIndex("by_instance", (q) => q.eq("instanceId", log.instanceId))
+      .collect();
+    const total = allLogs.reduce((n, l) => n + logPhotoIds(l).length, 0);
+
+    if (
+      existing.length >= MAX_PHOTOS_PER_STOP ||
+      total >= MAX_PHOTOS_PER_INSTANCE
+    ) {
+      await ctx.storage.delete(args.storageId);
+      return false;
+    }
+
+    await ctx.db.patch(args.stopLogId, {
+      photoStorageIds: [...existing, args.storageId],
+      photoStorageId: undefined,
+      updatedAt: args.now,
+    });
+    return true;
+  },
+});
+
+export const removePhoto = mutation({
   args: {
     stopLogId: v.id("stopLogs"),
     storageId: v.id("_storage"),
@@ -155,17 +211,22 @@ export const attachPhoto = mutation({
     if (!log) throw new Error("Stopp-logg ikke funnet");
     const instance = await ctx.db.get(log.instanceId);
     if (!instance) throw new Error("Emne ikke funnet");
+    if (instance.status !== "active") {
+      throw new Error("Bilder kan bare fjernes mens runden pågår");
+    }
     const owner = await requireOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
     });
     if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
 
-    if (log.photoStorageId) {
-      await ctx.storage.delete(log.photoStorageId);
-    }
+    const existing = logPhotoIds(log);
+    if (!existing.includes(args.storageId)) return null;
+    await ctx.storage.delete(args.storageId);
+    // `undefined` fjerner det utfasede feltet fra dokumentet.
     await ctx.db.patch(args.stopLogId, {
-      photoStorageId: args.storageId,
+      photoStorageIds: existing.filter((id) => id !== args.storageId),
+      photoStorageId: undefined,
       updatedAt: args.now,
     });
     return null;

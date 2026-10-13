@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { ownsResource, requireOwner, requireUserId } from "./lib/auth";
+import { logPhotoIds } from "./lib/photos";
 import {
   endOfNextOsloDay,
   estimateRoute,
@@ -42,9 +43,7 @@ async function snapshotChallenges(
     .collect();
   return builtins
     .filter(
-      (c) =>
-        c.isActive &&
-        (c.barId === undefined || barIds.includes(c.barId)),
+      (c) => c.isActive && (c.barId === undefined || barIds.includes(c.barId)),
     )
     .map((c) => c._id);
 }
@@ -183,10 +182,7 @@ export const suggest = query({
     const maxStops = 12;
     const stopTarget =
       args.mode === "stops"
-        ? Math.min(
-            Math.max(Math.floor(args.stopCount ?? 4), 2),
-            maxStops,
-          )
+        ? Math.min(Math.max(Math.floor(args.stopCount ?? 4), 2), maxStops)
         : maxStops;
     const timeBudget =
       args.mode === "time"
@@ -308,8 +304,7 @@ export const createTemplateAndStart = mutation({
 
     const templateId = await ctx.db.insert("routeTemplates", {
       userId: owner.kind === "user" ? owner.userId : undefined,
-      guestSessionId:
-        owner.kind === "guest" ? owner.guestSessionId : undefined,
+      guestSessionId: owner.kind === "guest" ? owner.guestSessionId : undefined,
       name: args.name?.trim() || "Min kveld",
       barIds: args.barIds,
       challengeIds,
@@ -324,8 +319,7 @@ export const createTemplateAndStart = mutation({
 
     return await ctx.db.insert("routeInstances", {
       userId: owner.kind === "user" ? owner.userId : undefined,
-      guestSessionId:
-        owner.kind === "guest" ? owner.guestSessionId : undefined,
+      guestSessionId: owner.kind === "guest" ? owner.guestSessionId : undefined,
       templateId,
       barIds: args.barIds,
       challengeIds,
@@ -362,6 +356,7 @@ export const getInstance = query({
       ),
       startedAt: v.optional(v.number()),
       completedAt: v.optional(v.number()),
+      savedToAccount: v.boolean(),
       ...estimateFields,
       bars: v.array(
         v.object({
@@ -430,6 +425,7 @@ export const getInstance = query({
       status: instance.status,
       startedAt: instance.startedAt,
       completedAt: instance.completedAt,
+      savedToAccount: instance.userId != null,
       estimatedDistanceMeters: instance.estimatedDistanceMeters,
       estimatedWalkMinutes: instance.estimatedWalkMinutes,
       estimatedDwellMinutes: instance.estimatedDwellMinutes,
@@ -481,9 +477,7 @@ export const listMine = query({
         stopCount: inst.barIds.length,
       });
     }
-    return result.sort(
-      (a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0),
-    );
+    return result.sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0));
   },
 });
 
@@ -625,6 +619,73 @@ export const replay = mutation({
   },
 });
 
+/** Slett en kveld (bruker eller gjest): stopLogs, bilder, instans, og delt mal hvis ubrukt. */
+export const deleteInstance = mutation({
+  args: {
+    instanceId: v.id("routeInstances"),
+    guestToken: v.optional(v.string()),
+    now: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const instance = await ctx.db.get(args.instanceId);
+    if (!instance) throw new Error("Kvelden ble ikke funnet");
+    const owner = await requireOwner(ctx, {
+      guestToken: args.guestToken,
+      now: args.now,
+    });
+    if (!ownsResource(owner, instance)) {
+      throw new Error("Kvelden ble ikke funnet");
+    }
+
+    const logs = await ctx.db
+      .query("stopLogs")
+      .withIndex("by_instance", (q) => q.eq("instanceId", instance._id))
+      .collect();
+    for (const log of logs) {
+      for (const storageId of logPhotoIds(log)) {
+        await ctx.storage.delete(storageId);
+      }
+      await ctx.db.delete(log._id);
+    }
+
+    await ctx.db.delete(instance._id);
+
+    // Replay deler mal mellom kvelder: rydd referanser, slett mal kun hvis ubrukt.
+    const remaining =
+      owner.kind === "user"
+        ? await ctx.db
+            .query("routeInstances")
+            .withIndex("by_user", (q) => q.eq("userId", owner.userId))
+            .collect()
+        : await ctx.db
+            .query("routeInstances")
+            .withIndex("by_guest_session", (q) =>
+              q.eq("guestSessionId", owner.guestSessionId),
+            )
+            .collect();
+    let templateInUse = false;
+    for (const other of remaining) {
+      if (other.templateId === instance.templateId) templateInUse = true;
+      if (other.replayedFromInstanceId === instance._id) {
+        await ctx.db.patch(other._id, { replayedFromInstanceId: undefined });
+      }
+    }
+    if (!templateInUse) {
+      const template = await ctx.db.get(instance.templateId);
+      if (
+        template &&
+        ((owner.kind === "user" && template.userId === owner.userId) ||
+          (owner.kind === "guest" &&
+            template.guestSessionId === owner.guestSessionId))
+      ) {
+        await ctx.db.delete(template._id);
+      }
+    }
+    return null;
+  },
+});
+
 export const claimGuest = mutation({
   args: {
     guestToken: v.string(),
@@ -642,9 +703,7 @@ export const claimGuest = mutation({
 
     const templates = await ctx.db
       .query("routeTemplates")
-      .withIndex("by_guest_session", (q) =>
-        q.eq("guestSessionId", session._id),
-      )
+      .withIndex("by_guest_session", (q) => q.eq("guestSessionId", session._id))
       .collect();
     for (const t of templates) {
       await ctx.db.patch(t._id, {
@@ -655,9 +714,7 @@ export const claimGuest = mutation({
 
     const instances = await ctx.db
       .query("routeInstances")
-      .withIndex("by_guest_session", (q) =>
-        q.eq("guestSessionId", session._id),
-      )
+      .withIndex("by_guest_session", (q) => q.eq("guestSessionId", session._id))
       .collect();
     for (const inst of instances) {
       await ctx.db.patch(inst._id, {
@@ -678,9 +735,7 @@ export const claimGuest = mutation({
 
     const bars = await ctx.db
       .query("bars")
-      .withIndex("by_guest_session", (q) =>
-        q.eq("guestSessionId", session._id),
-      )
+      .withIndex("by_guest_session", (q) => q.eq("guestSessionId", session._id))
       .collect();
     for (const bar of bars) {
       await ctx.db.patch(bar._id, {
@@ -691,9 +746,7 @@ export const claimGuest = mutation({
 
     const challenges = await ctx.db
       .query("challenges")
-      .withIndex("by_guest_session", (q) =>
-        q.eq("guestSessionId", session._id),
-      )
+      .withIndex("by_guest_session", (q) => q.eq("guestSessionId", session._id))
       .collect();
     for (const c of challenges) {
       await ctx.db.patch(c._id, {

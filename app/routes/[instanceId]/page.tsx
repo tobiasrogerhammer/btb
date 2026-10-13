@@ -1,9 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useParams, useRouter } from "next/navigation";
-import { Beer, Camera, Check, Clock, Plus, Settings, Star, X } from "lucide-react";
+import {
+  MAX_PHOTOS_PER_INSTANCE,
+  MAX_PHOTOS_PER_STOP,
+} from "@/convex/lib/photos";
+import {
+  Beer,
+  Camera,
+  Check,
+  Clock,
+  Plus,
+  Settings,
+  CircleStop,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AppShell, PrimaryButton } from "@/components/ui";
@@ -53,12 +68,20 @@ function hashId(id: string): number {
   return h;
 }
 
+/** Alle utfordringer som gjelder dette stoppet (bar-spesifikke + generiske + egne). */
+function allChallengesForStop(
+  all: ChallengeRow[],
+  barId: Id<"bars">,
+): ChallengeRow[] {
+  return all.filter((c) => c.barId === undefined || c.barId === barId);
+}
+
 /** Maks 3 foreslåtte (builtin); egne utfordringer for stoppet vises alltid. */
 function pickChallengesForStop(
   all: ChallengeRow[],
   barId: Id<"bars">,
 ): ChallengeRow[] {
-  const forStop = all.filter((c) => c.barId === undefined || c.barId === barId);
+  const forStop = allChallengesForStop(all, barId);
   const userOnes = forStop.filter((c) => c.source === "user");
   const barSpecific = forStop.filter(
     (c) => c.source === "builtin" && c.barId === barId,
@@ -67,15 +90,16 @@ function pickChallengesForStop(
     (c) => c.source === "builtin" && c.barId === undefined,
   );
 
-  const start =
-    generics.length > 0 ? hashId(barId) % generics.length : 0;
+  const start = generics.length > 0 ? hashId(barId) % generics.length : 0;
   const rotated =
     generics.length > 0
       ? [...generics.slice(start), ...generics.slice(0, start)]
       : [];
 
-  const suggestedSlots = Math.max(0, MAX_SUGGESTED_CHALLENGES);
-  const suggested = [...barSpecific, ...rotated].slice(0, suggestedSlots);
+  const suggested = [...barSpecific, ...rotated].slice(
+    0,
+    MAX_SUGGESTED_CHALLENGES,
+  );
 
   const seen = new Set(userOnes.map((c) => c._id));
   const merged = [...userOnes];
@@ -86,6 +110,111 @@ function pickChallengesForStop(
     }
   }
   return merged;
+}
+
+/**
+ * Stoppliste: foreslåtte (+ egne) + hukede fra «Se alle» som ikke allerede er der.
+ * Gjennomførte sorteres øverst så det er tydelig hva som er gjort.
+ */
+function visibleChallengesForStop(
+  all: ChallengeRow[],
+  barId: Id<"bars">,
+  completedIds: Id<"challenges">[],
+): ChallengeRow[] {
+  const base = pickChallengesForStop(all, barId);
+  const baseIds = new Set(base.map((c) => c._id));
+  const done = new Set(completedIds);
+  const extras = allChallengesForStop(all, barId).filter(
+    (c) => done.has(c._id) && !baseIds.has(c._id),
+  );
+  const merged = [...extras, ...base];
+  return [
+    ...merged.filter((c) => done.has(c._id)),
+    ...merged.filter((c) => !done.has(c._id)),
+  ];
+}
+
+function AllChallengesDialog({
+  challenges,
+  completedIds,
+  onToggle,
+  onClose,
+}: {
+  challenges: ChallengeRow[];
+  completedIds: Id<"challenges">[];
+  onToggle: (id: Id<"challenges">) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const done = new Set(completedIds);
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (dialog && !dialog.open) dialog.showModal();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
+  const sorted = [
+    ...challenges.filter((c) => done.has(c._id)),
+    ...challenges.filter((c) => !done.has(c._id)),
+  ];
+
+  return (
+    <dialog
+      ref={ref}
+      aria-label="Alle utfordringer"
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="recap-dialog m-auto max-h-[min(78dvh,42rem)] w-[calc(100%-3rem)] max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[var(--surface)] p-0 text-[var(--text)] shadow-2xl backdrop:bg-black/60"
+    >
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-white/5 bg-[var(--surface)] px-3 py-2.5">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Lukk"
+          title="Lukk"
+          className="flex size-10 items-center justify-center rounded-full text-[var(--muted)] transition-colors hover:bg-white/10 hover:text-[var(--text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
+        >
+          <X className="size-5" aria-hidden />
+        </button>
+        <h2 className="min-w-0 flex-1 text-center font-[family-name:var(--font-display)] text-base">
+          Alle utfordringer
+        </h2>
+        <span className="size-10 shrink-0" aria-hidden />
+      </div>
+      <ul className="space-y-2 px-4 py-4">
+        {sorted.map((c) => {
+          const isDone = done.has(c._id);
+          return (
+            <li key={c._id}>
+              <button
+                type="button"
+                onClick={() => onToggle(c._id)}
+                className="flex w-full items-start gap-3 rounded-lg bg-[var(--bg)] px-3 py-3 text-left text-sm"
+              >
+                <span
+                  className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border ${
+                    isDone
+                      ? "border-[var(--brand)] bg-[var(--brand)]"
+                      : "border-white/20"
+                  }`}
+                >
+                  {isDone && <Check className="size-3 text-white" />}
+                </span>
+                <span className="min-w-0 flex-1 text-pretty">{c.text}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </dialog>
+  );
 }
 
 export default function ActiveRoutePage() {
@@ -103,10 +232,13 @@ export default function ActiveRoutePage() {
   const [checkInBurst, setCheckInBurst] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addStopOpen, setAddStopOpen] = useState(false);
-  const [confirmEndOpen, setConfirmEndOpen] = useState(false);
+  const [confirmStopOpen, setConfirmStopOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deletingRound, setDeletingRound] = useState(false);
   const [customStopName, setCustomStopName] = useState("");
   const [addingStop, setAddingStop] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [allChallengesOpen, setAllChallengesOpen] = useState(false);
 
   const instance = useQuery(api.routes.getInstance, {
     instanceId,
@@ -137,7 +269,11 @@ export default function ActiveRoutePage() {
   const toggle = useMutation(api.stopLogs.toggleChallenge);
   const generateUploadUrl = useMutation(api.stopLogs.generateUploadUrl);
   const attachPhoto = useMutation(api.stopLogs.attachPhoto);
+  const removePhoto = useMutation(api.stopLogs.removePhoto);
+  const [removingPhoto, setRemovingPhoto] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const complete = useMutation(api.routes.complete);
+  const deleteInstance = useMutation(api.routes.deleteInstance);
   const createChallenge = useMutation(api.challenges.createForInstance);
   const addStop = useMutation(api.routes.addStop);
   const createUserBar = useMutation(api.bars.createUserBar);
@@ -146,6 +282,7 @@ export default function ActiveRoutePage() {
     setCheckInBurst(false);
     setCheckingIn(false);
     setSettingsOpen(false);
+    setAllChallengesOpen(false);
   }, [stopIndex]);
 
   useEffect(() => {
@@ -177,13 +314,18 @@ export default function ActiveRoutePage() {
 
   const bar = instance.bars[stopIndex];
   const log = logs?.find((l) => l.barId === bar?._id);
+  const totalPhotos = (logs ?? []).reduce((n, l) => n + l.photos.length, 0);
+  const allStopChallenges =
+    bar && challenges ? allChallengesForStop(challenges, bar._id) : [];
   const stopChallenges =
     bar && challenges
-      ? pickChallengesForStop(challenges, bar._id)
+      ? visibleChallengesForStop(
+          challenges,
+          bar._id,
+          log?.completedChallengeIds ?? [],
+        )
       : [];
-  const hoursLabel = bar
-    ? formatHoursForNow(bar.openingHours, now)
-    : null;
+  const hoursLabel = bar ? formatHoursForNow(bar.openingHours, now) : null;
 
   async function onCheckIn() {
     if (!bar || checkingIn) return;
@@ -243,23 +385,62 @@ export default function ActiveRoutePage() {
 
   async function onPhoto(file: File) {
     if (!log) return;
-    const token = guestToken ?? (await ensureGuest());
-    const uploadUrl = await generateUploadUrl({
-      guestToken: token,
-      now: Date.now(),
-    });
-    const res = await fetch(uploadUrl, {
-      method: "POST",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
-    const { storageId } = (await res.json()) as { storageId: Id<"_storage"> };
-    await attachPhoto({
-      stopLogId: log._id,
-      storageId,
-      guestToken: token,
-      now: Date.now(),
-    });
+    if (log.photos.length >= MAX_PHOTOS_PER_STOP) {
+      setError(`Maks ${MAX_PHOTOS_PER_STOP} bilder per stopp`);
+      return;
+    }
+    if (totalPhotos >= MAX_PHOTOS_PER_INSTANCE) {
+      setError(`Maks ${MAX_PHOTOS_PER_INSTANCE} bilder per kveld`);
+      return;
+    }
+    setUploadingPhoto(true);
+    setError(null);
+    try {
+      const token = guestToken ?? (await ensureGuest());
+      const uploadUrl = await generateUploadUrl({
+        guestToken: token,
+        now: Date.now(),
+      });
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) throw new Error("Opplasting feilet");
+      const { storageId } = (await res.json()) as {
+        storageId: Id<"_storage">;
+      };
+      const ok = await attachPhoto({
+        stopLogId: log._id,
+        storageId,
+        guestToken: token,
+        now: Date.now(),
+      });
+      if (!ok) setError("Maks antall bilder er nådd");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kunne ikke laste opp bildet");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  async function onRemovePhoto(storageId: Id<"_storage">) {
+    if (!log) return;
+    setRemovingPhoto(true);
+    setError(null);
+    try {
+      const token = guestToken ?? (await ensureGuest());
+      await removePhoto({
+        stopLogId: log._id,
+        storageId,
+        guestToken: token,
+        now: Date.now(),
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kunne ikke fjerne bildet");
+    } finally {
+      setRemovingPhoto(false);
+    }
   }
 
   async function onComplete() {
@@ -269,7 +450,7 @@ export default function ActiveRoutePage() {
       guestToken: token,
       now: Date.now(),
     });
-    router.push(`/routes/${instanceId}/recap`);
+    router.push(`/routes/${instanceId}/recap?save=1`);
   }
 
   const stopCount = instance.bars.length;
@@ -324,8 +505,13 @@ export default function ActiveRoutePage() {
     }
   }
 
-  const km = (instance.estimatedDistanceMeters / 1000).toFixed(1).replace(".", ",");
-  const totalMin = Math.max(0, Math.round(instance.estimatedTotalMinutes / 5) * 5);
+  const km = (instance.estimatedDistanceMeters / 1000)
+    .toFixed(1)
+    .replace(".", ",");
+  const totalMin = Math.max(
+    0,
+    Math.round(instance.estimatedTotalMinutes / 5) * 5,
+  );
   const hours = Math.floor(totalMin / 60);
   const mins = totalMin % 60;
   const durationLabel =
@@ -335,8 +521,7 @@ export default function ActiveRoutePage() {
         ? `~${hours} t`
         : `~${hours} t ${mins} min`;
   const checkedCount = logs?.length ?? 0;
-  const progressPct =
-    stopCount > 0 ? (checkedCount / stopCount) * 100 : 0;
+  const progressPct = stopCount > 0 ? (checkedCount / stopCount) * 100 : 0;
 
   return (
     <AppShell>
@@ -397,14 +582,29 @@ export default function ActiveRoutePage() {
                   <button
                     type="button"
                     role="menuitem"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text)] transition hover:bg-white/5"
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      setConfirmStopOpen(true);
+                    }}
+                  >
+                    <CircleStop
+                      className="size-4 text-[var(--muted)]"
+                      aria-hidden
+                    />
+                    Stopp runde
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-400 transition hover:bg-red-500/10"
                     onClick={() => {
                       setSettingsOpen(false);
-                      setConfirmEndOpen(true);
+                      setConfirmDeleteOpen(true);
                     }}
                   >
-                    <X className="size-4" aria-hidden />
-                    Avslutt runde
+                    <Trash2 className="size-4" aria-hidden />
+                    Slett runde
                   </button>
                 </div>
               </>
@@ -490,9 +690,7 @@ export default function ActiveRoutePage() {
                     {bar.beerPrice != null && (
                       <span className="inline-flex items-center gap-0.5">
                         <Beer className="size-3" aria-hidden />
-                        <span className="tabular-nums">
-                          {bar.beerPrice} kr
-                        </span>
+                        <span className="tabular-nums">{bar.beerPrice} kr</span>
                       </span>
                     )}
                     {hoursLabel && (
@@ -539,33 +737,91 @@ export default function ActiveRoutePage() {
       {log && (
         <>
           <section className="mt-6">
-            <h2 className="text-sm font-medium">Bilde</h2>
-            {log.photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={log.photoUrl}
-                alt=""
-                className="mt-2 aspect-square w-full rounded-xl object-cover"
-              />
-            ) : (
-              <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 py-10 text-sm text-[var(--muted)]">
-                <Camera className="size-5" />
-                Ta / last opp
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void onPhoto(file);
-                  }}
-                />
-              </label>
+            <h2 className="text-sm font-medium">
+              {log.photos.length > 1 ? "Bilder" : "Bilde"}
+            </h2>
+            <div className="mt-2 space-y-2">
+              {log.photos.length > 0 && (
+                <div
+                  className={`grid gap-2 ${
+                    log.photos.length === 1
+                      ? "mx-auto w-[78%] grid-cols-1"
+                      : log.photos.length === 2
+                        ? "grid-cols-2"
+                        : "grid-cols-3"
+                  }`}
+                >
+                  {log.photos.map((photo) => (
+                    <div key={photo.storageId} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.url}
+                        alt=""
+                        className="aspect-square w-full rounded-xl object-cover"
+                      />
+                      <button
+                        type="button"
+                        disabled={removingPhoto}
+                        onClick={() => void onRemovePhoto(photo.storageId)}
+                        aria-label="Fjern bilde"
+                        title="Fjern bilde"
+                        className="absolute right-2 top-2 flex size-10 items-center justify-center rounded-full bg-black/70 text-red-400 transition-colors hover:bg-black/85 hover:text-red-300 disabled:opacity-40"
+                      >
+                        <X className="size-5" aria-hidden />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {log.photos.length < MAX_PHOTOS_PER_STOP &&
+                totalPhotos < MAX_PHOTOS_PER_INSTANCE && (
+                  <label
+                    className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/20 text-sm text-[var(--muted)] ${
+                      log.photos.length === 0 ? "py-10" : "py-3"
+                    } ${uploadingPhoto ? "pointer-events-none opacity-40" : ""}`}
+                  >
+                    <Camera className="size-5" aria-hidden />
+                    {uploadingPhoto ? "Laster opp…" : "Ta / last opp"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingPhoto}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) void onPhoto(file);
+                      }}
+                    />
+                  </label>
+                )}
+            </div>
+            {log.photos.length >= MAX_PHOTOS_PER_STOP && (
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Maks {MAX_PHOTOS_PER_STOP} bilder per stopp
+              </p>
             )}
+            {log.photos.length < MAX_PHOTOS_PER_STOP &&
+              totalPhotos >= MAX_PHOTOS_PER_INSTANCE && (
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  Du har nådd maks {MAX_PHOTOS_PER_INSTANCE} bilder for kvelden.
+                </p>
+              )}
           </section>
 
           <section className="mt-6">
-            <h2 className="text-sm font-medium">Utfordringer</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-medium">Utfordringer</h2>
+              {allStopChallenges.length > MAX_SUGGESTED_CHALLENGES && (
+                <button
+                  type="button"
+                  onClick={() => setAllChallengesOpen(true)}
+                  className="shrink-0 text-sm font-medium text-[var(--brand)] transition hover:text-[var(--brand)]/80"
+                >
+                  Se alle
+                </button>
+              )}
+            </div>
             <ul className="mt-2 space-y-2">
               {stopChallenges.map((c) => {
                 const done = log.completedChallengeIds.includes(c._id);
@@ -649,37 +905,46 @@ export default function ActiveRoutePage() {
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
-      {confirmEndOpen && (
+      {allChallengesOpen && bar && log && (
+        <AllChallengesDialog
+          challenges={allStopChallenges}
+          completedIds={log.completedChallengeIds}
+          onToggle={(id) => void onToggle(id)}
+          onClose={() => setAllChallengesOpen(false)}
+        />
+      )}
+
+      {confirmStopOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
           role="presentation"
-          onClick={() => setConfirmEndOpen(false)}
+          onClick={() => setConfirmStopOpen(false)}
         >
           <div
             role="alertdialog"
             aria-modal="true"
-            aria-labelledby="confirm-end-title"
-            aria-describedby="confirm-end-desc"
+            aria-labelledby="confirm-stop-title"
+            aria-describedby="confirm-stop-desc"
             className="w-full max-w-md rounded-xl border border-white/10 bg-[var(--surface)] p-4 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <h2
-              id="confirm-end-title"
+              id="confirm-stop-title"
               className="font-[family-name:var(--font-display)] text-lg text-[var(--text)]"
             >
-              Avslutte runden?
+              Stoppe runden?
             </h2>
             <p
-              id="confirm-end-desc"
+              id="confirm-stop-desc"
               className="mt-2 text-sm leading-snug text-[var(--muted)]"
             >
-              Du går tilbake til forsiden. Fremgangen på denne runden blir ikke
-              fullført som «Vi overlevde».
+              Du går tilbake til forsiden. Fremgangen blir værende, så du kan
+              fortsette senere. Runden fullføres ikke som «Vi overlevde».
             </p>
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
-                onClick={() => setConfirmEndOpen(false)}
+                onClick={() => setConfirmStopOpen(false)}
                 className="flex-1 rounded-lg border border-white/10 px-3 py-2.5 text-sm text-[var(--text)] transition hover:bg-white/5"
               >
                 Fortsett runden
@@ -687,12 +952,84 @@ export default function ActiveRoutePage() {
               <button
                 type="button"
                 onClick={() => {
-                  setConfirmEndOpen(false);
+                  setConfirmStopOpen(false);
                   router.push("/");
                 }}
-                className="flex-1 rounded-lg bg-red-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-red-500"
+                className="flex-1 rounded-lg bg-[var(--brand)] px-3 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
               >
-                Avslutt runde
+                Stopp runde
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
+          role="presentation"
+          onClick={() => {
+            if (!deletingRound) setConfirmDeleteOpen(false);
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="confirm-delete-title"
+            aria-describedby="confirm-delete-desc"
+            className="w-full max-w-md rounded-xl border border-white/10 bg-[var(--surface)] p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="confirm-delete-title"
+              className="font-[family-name:var(--font-display)] text-lg text-[var(--text)]"
+            >
+              Slette runden?
+            </h2>
+            <p
+              id="confirm-delete-desc"
+              className="mt-2 text-sm leading-snug text-[var(--muted)]"
+            >
+              Sletter runden og alle bildene fra den. Dette kan ikke angres.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                disabled={deletingRound}
+                onClick={() => setConfirmDeleteOpen(false)}
+                className="flex-1 rounded-lg border border-white/10 px-3 py-2.5 text-sm text-[var(--text)] transition hover:bg-white/5 disabled:opacity-40"
+              >
+                Avbryt
+              </button>
+              <button
+                type="button"
+                disabled={deletingRound}
+                onClick={() => {
+                  void (async () => {
+                    setDeletingRound(true);
+                    setError(null);
+                    try {
+                      const token = guestToken ?? (await ensureGuest());
+                      await deleteInstance({
+                        instanceId,
+                        guestToken: token,
+                        now: Date.now(),
+                      });
+                      router.replace("/");
+                    } catch (e) {
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : "Kunne ikke slette runden",
+                      );
+                      setDeletingRound(false);
+                      setConfirmDeleteOpen(false);
+                    }
+                  })();
+                }}
+                className="flex-1 rounded-lg bg-red-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-40"
+              >
+                {deletingRound ? "Sletter…" : "Slett runde"}
               </button>
             </div>
           </div>

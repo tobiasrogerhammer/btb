@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { logPhotoIds } from "./lib/photos";
 
 export const cleanupExpiredGuests = internalMutation({
   args: {
@@ -30,8 +31,8 @@ export const cleanupExpiredGuests = internalMutation({
           .withIndex("by_instance", (q) => q.eq("instanceId", inst._id))
           .collect();
         for (const log of logs) {
-          if (log.photoStorageId) {
-            await ctx.storage.delete(log.photoStorageId);
+          for (const storageId of logPhotoIds(log)) {
+            await ctx.storage.delete(storageId);
           }
           await ctx.db.delete(log._id);
         }

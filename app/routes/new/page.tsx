@@ -290,16 +290,56 @@ export default function NewRoutePage() {
 
   const loadingRoute = suggestion === undefined && !manualEdit;
 
-  /** Valgte stopp først (i rute-rekkefølge), deretter hele resten av katalogen. */
+  /**
+   * Valgte stopp først (i rute-rekkefølge), deretter resten sortert etter
+   * hvor godt de passer filtrene (pris, rating, åpningstid i tidsvinduet).
+   * Likt treff → høyest rating, så lavest ølpris, så navn.
+   */
   const catalogBars = useMemo(() => {
     if (!bars) return [];
     const selectedSet = new Set(barIds);
     const selected = barIds
       .map((id) => bars.find((b) => b._id === id))
       .filter((b): b is (typeof bars)[number] => b != null);
-    const rest = bars.filter((b) => !selectedSet.has(b._id));
+
+    const mismatchScore = (bar: (typeof bars)[number]): number => {
+      let score = 0;
+      if (maxBeerPrice < BEER_PRICE_MAX) {
+        if (bar.beerPrice == null || bar.beerPrice > maxBeerPrice) score += 1;
+      }
+      if (
+        minRating != null &&
+        (bar.rating == null || bar.rating < minRating)
+      ) {
+        score += 1;
+      }
+      const hoursWarning = hoursWarningForWindow(
+        bar.openingHours,
+        timeWindow.windowStart,
+        timeWindow.windowEnd,
+      );
+      if (hoursWarning === "Ikke åpent i tidsvinduet") score += 3;
+      else if (hoursWarning != null) score += 0.5;
+      return score;
+    };
+
+    const rest = bars
+      .filter((b) => !selectedSet.has(b._id))
+      .map((bar) => ({ bar, score: mismatchScore(bar) }))
+      .sort((a, b) => {
+        if (a.score !== b.score) return a.score - b.score;
+        const ra = a.bar.rating ?? -1;
+        const rb = b.bar.rating ?? -1;
+        if (ra !== rb) return rb - ra;
+        const pa = a.bar.beerPrice ?? Number.POSITIVE_INFINITY;
+        const pb = b.bar.beerPrice ?? Number.POSITIVE_INFINITY;
+        if (pa !== pb) return pa - pb;
+        return a.bar.name.localeCompare(b.bar.name, "nb");
+      })
+      .map(({ bar }) => bar);
+
     return [...selected, ...rest];
-  }, [bars, barIds]);
+  }, [bars, barIds, maxBeerPrice, minRating, timeWindow]);
 
   // Filters change → drop manual lock so suggest re-applies
   useEffect(() => {
@@ -488,7 +528,7 @@ export default function NewRoutePage() {
               type="button"
               onClick={reshuffle}
               disabled={loadingRoute}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--brand)] px-2.5 py-1.5 text-xs text-[var(--text)] transition hover:bg-[var(--brand)]/10 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white px-2.5 py-1.5 text-xs text-[var(--text)] transition hover:bg-white/10 disabled:opacity-40"
             >
               <Shuffle className="size-3.5" />
               Ny rute
@@ -499,10 +539,10 @@ export default function NewRoutePage() {
               aria-expanded={showOptions}
               aria-controls="route-options"
               aria-label="Options"
-              className={`inline-flex size-8 items-center justify-center rounded-lg border border-[var(--brand)] transition ${
+              className={`inline-flex size-8 items-center justify-center rounded-lg border border-white transition ${
                 showOptions || hasCustomFilters
                   ? "text-[var(--brand)]"
-                  : "text-[var(--text)] hover:bg-[var(--brand)]/10"
+                  : "text-[var(--text)] hover:bg-white/10"
               }`}
             >
               <SlidersHorizontal className="size-3.5" aria-hidden />
@@ -638,9 +678,11 @@ export default function NewRoutePage() {
           <ul className="divide-y divide-white/10">
             {ordered.map((bar, index) => {
               const hoursWarning = hoursWarningForBar(bar);
-              const showHoursWarning =
-                hoursWarning != null &&
-                hoursWarning !== "Ikke åpent i tidsvinduet";
+              const hoursClosedOutside =
+                hoursWarning === "Ikke åpent i tidsvinduet";
+              const hoursPartialWarning =
+                hoursWarning != null && !hoursClosedOutside;
+              const hoursAlert = hoursClosedOutside || hoursPartialWarning;
               const hoursLabel = formatHoursForNow(
                 bar.openingHours,
                 timeWindow.windowStart,
@@ -698,15 +740,17 @@ export default function NewRoutePage() {
                     {hoursLabel && (
                       <span
                         className={`inline-flex items-center gap-0.5 ${
-                          showHoursWarning
-                            ? "font-medium text-[#F59E0B]"
-                            : ""
+                          hoursClosedOutside
+                            ? "font-medium text-red-400"
+                            : hoursPartialWarning
+                              ? "font-medium text-[#F59E0B]"
+                              : ""
                         }`}
                         title={
-                          showHoursWarning ? (hoursWarning ?? undefined) : undefined
+                          hoursAlert ? (hoursWarning ?? undefined) : undefined
                         }
                       >
-                        {showHoursWarning ? (
+                        {hoursAlert ? (
                           <AlertTriangle
                             className="size-2.5 shrink-0"
                             aria-hidden
@@ -715,7 +759,7 @@ export default function NewRoutePage() {
                           <Clock className="size-2.5 shrink-0" aria-hidden />
                         )}
                         <span>{hoursLabel}</span>
-                        {showHoursWarning && (
+                        {hoursAlert && (
                           <span className="sr-only"> ({hoursWarning})</span>
                         )}
                       </span>

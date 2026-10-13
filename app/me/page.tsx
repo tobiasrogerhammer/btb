@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AppShell, PrimaryButton } from "@/components/ui";
+import { RecapDialog } from "@/components/RecapDialog";
 
 function statusLabel(status: "planned" | "active" | "completed") {
   if (status === "completed") return "fullført";
@@ -32,12 +34,14 @@ export default function MePage() {
     api.users.getProfile,
     isAuthenticated ? { now } : "skip",
   );
-  const replay = useMutation(api.routes.replay);
   const deleteAccount = useMutation(api.users.deleteAccount);
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openNightId, setOpenNightId] = useState<Id<"routeInstances"> | null>(
+    null,
+  );
 
   if (isLoading) {
     return (
@@ -138,7 +142,9 @@ export default function MePage() {
       </section>
 
       <section className="mt-8" id="kvelder">
-        <h2 className="text-sm font-medium text-[var(--muted)]">Mine kvelder</h2>
+        <h2 className="text-sm font-medium text-[var(--muted)]">
+          Mine kvelder
+        </h2>
         <ul className="mt-3 divide-y divide-white/10">
           {profile.nights.length === 0 && (
             <li className="py-4 text-sm text-[var(--muted)]">
@@ -149,66 +155,62 @@ export default function MePage() {
             </li>
           )}
           {profile.nights.map((night) => {
-            const href =
-              night.status === "completed"
-                ? `/routes/${night._id}/recap`
-                : `/routes/${night._id}`;
+            const isCompleted = night.status === "completed";
             const when = formatNightDate(
               night.completedAt ?? night.startedAt ?? undefined,
             );
+            const body = (
+              <>
+                {night.photoThumbUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={night.photoThumbUrl}
+                    alt=""
+                    className="size-12 shrink-0 rounded-lg object-cover"
+                  />
+                ) : (
+                  <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--surface)] text-xs text-[var(--muted)]">
+                    {night.stopCount}
+                  </span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">
+                    {night.name}
+                  </span>
+                  <span className="block text-xs text-[var(--muted)]">
+                    {statusLabel(night.status)}
+                    {when ? ` · ${when}` : ""} · {night.stopCount} stopp · ~
+                    {Math.round(night.estimatedDistanceMeters / 1000)} km
+                  </span>
+                </span>
+              </>
+            );
             return (
               <li key={night._id} className="py-3">
-                <Link href={href} className="flex items-center gap-3">
-                  {night.photoThumbUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={night.photoThumbUrl}
-                      alt=""
-                      className="size-12 shrink-0 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-lg bg-[var(--surface)] text-xs text-[var(--muted)]">
-                      {night.stopCount}
-                    </span>
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">
-                      {night.name}
-                    </span>
-                    <span className="block text-xs text-[var(--muted)]">
-                      {statusLabel(night.status)}
-                      {when ? ` · ${when}` : ""} · {night.stopCount} stopp · ~
-                      {Math.round(night.estimatedDistanceMeters / 1000)} km
-                    </span>
-                  </span>
-                </Link>
-                {night.status === "completed" && (
+                {isCompleted ? (
                   <button
                     type="button"
-                    disabled={busy}
-                    className="mt-2 text-sm text-[var(--brand)] disabled:opacity-40"
-                    onClick={() => {
-                      void (async () => {
-                        setBusy(true);
-                        try {
-                          const id = await replay({
-                            instanceId: night._id as Id<"routeInstances">,
-                            now: Date.now(),
-                          });
-                          router.push(`/routes/${id}`);
-                        } catch (e) {
-                          setError(
-                            e instanceof Error
-                              ? e.message
-                              : "Kunne ikke starte på nytt",
-                          );
-                          setBusy(false);
-                        }
-                      })();
-                    }}
+                    onClick={() =>
+                      setOpenNightId(night._id as Id<"routeInstances">)
+                    }
+                    aria-label={`Åpne ${night.name}`}
+                    className="group flex w-full items-center gap-3 text-left"
                   >
-                    Ta på nytt
+                    {body}
+                    <span
+                      aria-hidden
+                      className="flex size-9 shrink-0 items-center justify-center rounded-full border border-white/20 text-[var(--muted)] transition-colors group-hover:border-white/40 group-hover:text-[var(--text)]"
+                    >
+                      <ChevronRight className="size-5" />
+                    </span>
                   </button>
+                ) : (
+                  <Link
+                    href={`/routes/${night._id}`}
+                    className="flex items-center gap-3"
+                  >
+                    {body}
+                  </Link>
                 )}
               </li>
             );
@@ -261,6 +263,12 @@ export default function MePage() {
           </div>
         )}
       </section>
+      {openNightId && (
+        <RecapDialog
+          instanceId={openNightId}
+          onClose={() => setOpenNightId(null)}
+        />
+      )}
     </AppShell>
   );
 }

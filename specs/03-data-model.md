@@ -183,7 +183,8 @@ Per eier (bruker eller gjest) per bar i en instans. **Tidsstempel er first-class
 | `barId` | Id\<bars\> | |
 | `orderIndex` | number | |
 | `completedChallengeIds` | Id\<challenges\>[] | |
-| `photoStorageId` | Id\<_storage\>? | |
+| `photoStorageIds` | Id\<_storage\>[]? | Opptil **3 bilder per stopp**, maks **20 bilder per kveld** (håndheves i `attachPhoto`) |
+| `photoStorageId` | Id\<_storage\>? | **Utfaset** (ett bilde); leses fortsatt og slås sammen med `photoStorageIds`; fjernes ved neste endring av loggen |
 | `checkedInAt` | number | Første sjekk-inn |
 | `plannedDwellMinutes` | number? | Fase 1.5 |
 | `moveOnAt` | number? | Fase 1.5 |
