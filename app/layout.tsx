@@ -15,33 +15,33 @@ const display = Syne({
   variable: "--font-display",
 });
 
-const siteUrl = "https://btb.tobiashammer.dev";
+const siteUrl = "https://nextround.no";
 
 /** Stable public URL for link previews (avoid crawler issues with hashed asset paths). */
 const shareImage = {
   url: "/og-image.png",
   width: 1024,
   height: 537,
-  alt: "BtB — Bar til bar",
+  alt: "NextRound - Bar til bar",
   type: "image/png",
 } as const;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "BtB — Bar til bar",
+  title: "NextRound - Bar til bar",
   description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
   openGraph: {
     type: "website",
     locale: "nb_NO",
     url: siteUrl,
-    siteName: "BtB",
-    title: "BtB — Bar til bar",
+    siteName: "nextround",
+    title: "NextRound - Bar til bar",
     description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
     images: [shareImage],
   },
   twitter: {
     card: "summary_large_image",
-    title: "BtB — Bar til bar",
+    title: "NextRound - Bar til bar",
     description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
     images: [shareImage.url],
   },

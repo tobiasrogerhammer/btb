@@ -1,8 +1,8 @@
 # 08 — Personvernerklæring
 
-Denne erklæringen gjelder **BtB** («Bar-til-bar»). Den beskriver hvilke personopplysninger vi behandler, hvorfor, og hvilke rettigheter du har.
+Denne erklæringen gjelder **nextround**. Den beskriver hvilke personopplysninger vi behandler, hvorfor, og hvilke rettigheter du har.
 
-Behandlingsansvarlig: eier av prosjektet (navn/kontakt fylles inn ved offentlig launch).
+Behandlingsansvarlig: eier av nextround-prosjektet (navn/kontakt fylles inn ved offentlig launch).
 
 ## 1. Hva vi samler inn
 

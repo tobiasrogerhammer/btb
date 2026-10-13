@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 268 44" fill="none" role="img" aria-label="nextround">
+  <!--
+    Approximate rounded wordmark.
+    Brand orange (#CC3F0C): first n + o-circle
+    White (#F5F5F5): remaining letters
+  -->
+  <g
+    font-family="ui-rounded, 'Nunito', 'Varela Round', 'SF Pro Rounded', system-ui, sans-serif"
+    font-size="36"
+    font-weight="700"
+  >
+    <text x="0" y="34" fill="#CC3F0C">n</text>
+    <text x="22" y="34" fill="#F5F5F5">e</text>
+    <text x="42" y="34" fill="#F5F5F5">x</text>
+    <text x="64" y="34" fill="#F5F5F5">t</text>
+    <text x="100" y="34" fill="#F5F5F5">r</text>
+    <text x="120" y="34" fill="#F5F5F5">u</text>
+    <text x="142" y="34" fill="#F5F5F5">n</text>
+    <text x="164" y="34" fill="#F5F5F5">d</text>
+  </g>
+  <!-- o as solid brand circle -->
+  <circle cx="88" cy="26" r="11" fill="#CC3F0C" />
+</svg>

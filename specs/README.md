@@ -1,6 +1,6 @@
-# BtB — specs
+# nextround — specs
 
-Blueprint for **BtB** («Bar-til-bar»). Utvikling er **spec-drevet**: les og følg disse filene før du implementerer.
+Blueprint for **nextround**. Utvikling er **spec-drevet**: les og følg disse filene før du implementerer.
 
 ## Leserekkefølge
 
@@ -14,6 +14,7 @@ Blueprint for **BtB** («Bar-til-bar»). Utvikling er **spec-drevet**: les og f�
 | 6 | [06-roadmap.md](06-roadmap.md) | Faser og rekkefølge |
 | 7 | [07-disclaimer.md](07-disclaimer.md) | Ansvarsfraskrivelse (18+) |
 | 8 | [08-privacy.md](08-privacy.md) | Personvernerklæring |
+| 9 | [09-rebrand-nextround.md](09-rebrand-nextround.md) | Utfyllingsskjema: rebrand BtB → NextRound |
 
 ## Arbeidsregel
 

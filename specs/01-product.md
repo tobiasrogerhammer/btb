@@ -2,7 +2,7 @@
 
 ## Navn
 
-**BtB** — kort for **Bar-til-bar**.
+**nextround** — pub crawl-app (tidligere BtB / Bar-til-bar).
 
 Pub crawl-app med ruteforslag og utfordringer per stopp.
 

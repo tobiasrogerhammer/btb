@@ -12,7 +12,7 @@ export function AccountNavLink() {
     <Link
       href={href}
       aria-label="Konto"
-      className="inline-flex size-9 items-center justify-center rounded-full border border-[var(--brand)] text-white transition hover:bg-[var(--brand)]/10"
+      className="inline-flex size-9 items-center justify-center rounded-full border border-white/25 text-white transition hover:border-white/40 hover:bg-white/5"
     >
       <User className="size-4" aria-hidden />
     </Link>

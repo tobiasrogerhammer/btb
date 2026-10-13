@@ -102,6 +102,10 @@ export default function ActiveRoutePage() {
   const [checkingIn, setCheckingIn] = useState(false);
   const [checkInBurst, setCheckInBurst] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [addStopOpen, setAddStopOpen] = useState(false);
+  const [confirmEndOpen, setConfirmEndOpen] = useState(false);
+  const [customStopName, setCustomStopName] = useState("");
+  const [addingStop, setAddingStop] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
 
   const instance = useQuery(api.routes.getInstance, {
@@ -111,6 +115,10 @@ export default function ActiveRoutePage() {
   });
   const logs = useQuery(api.stopLogs.listForInstance, {
     instanceId,
+    guestToken: guestToken ?? undefined,
+    now,
+  });
+  const catalogBars = useQuery(api.bars.listActive, {
     guestToken: guestToken ?? undefined,
     now,
   });
@@ -131,6 +139,8 @@ export default function ActiveRoutePage() {
   const attachPhoto = useMutation(api.stopLogs.attachPhoto);
   const complete = useMutation(api.routes.complete);
   const createChallenge = useMutation(api.challenges.createForInstance);
+  const addStop = useMutation(api.routes.addStop);
+  const createUserBar = useMutation(api.bars.createUserBar);
 
   useEffect(() => {
     setCheckInBurst(false);
@@ -262,6 +272,58 @@ export default function ActiveRoutePage() {
     router.push(`/routes/${instanceId}/recap`);
   }
 
+  const stopCount = instance.bars.length;
+
+  async function onAddCatalogStop(barId: Id<"bars">) {
+    if (addingStop) return;
+    setAddingStop(true);
+    setError(null);
+    try {
+      const token = guestToken ?? (await ensureGuest());
+      await addStop({
+        instanceId,
+        barId,
+        guestToken: token,
+        now: Date.now(),
+      });
+      setAddStopOpen(false);
+      setCustomStopName("");
+      setStopIndex(stopCount);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kunne ikke legge til stopp");
+    } finally {
+      setAddingStop(false);
+    }
+  }
+
+  async function onAddCustomStop() {
+    const name = customStopName.trim();
+    if (!name || addingStop) return;
+    setAddingStop(true);
+    setError(null);
+    try {
+      const token = guestToken ?? (await ensureGuest());
+      const barId = await createUserBar({
+        name,
+        guestToken: token,
+        now: Date.now(),
+      });
+      await addStop({
+        instanceId,
+        barId,
+        guestToken: token,
+        now: Date.now(),
+      });
+      setAddStopOpen(false);
+      setCustomStopName("");
+      setStopIndex(stopCount);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kunne ikke legge til stopp");
+    } finally {
+      setAddingStop(false);
+    }
+  }
+
   const km = (instance.estimatedDistanceMeters / 1000).toFixed(1).replace(".", ",");
   const totalMin = Math.max(0, Math.round(instance.estimatedTotalMinutes / 5) * 5);
   const hours = Math.floor(totalMin / 60);
@@ -272,7 +334,6 @@ export default function ActiveRoutePage() {
       : mins === 0
         ? `~${hours} t`
         : `~${hours} t ${mins} min`;
-  const stopCount = instance.bars.length;
   const checkedCount = logs?.length ?? 0;
   const progressPct =
     stopCount > 0 ? (checkedCount / stopCount) * 100 : 0;
@@ -319,7 +380,7 @@ export default function ActiveRoutePage() {
                 />
                 <div
                   role="menu"
-                  className="absolute right-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-lg border border-white/10 bg-[var(--surface)] py-1 shadow-lg"
+                  className="absolute right-0 top-full z-40 mt-2 w-48 overflow-hidden rounded-lg border border-white/10 bg-[var(--surface)] py-1 shadow-lg"
                 >
                   <button
                     type="button"
@@ -327,10 +388,22 @@ export default function ActiveRoutePage() {
                     className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text)] transition hover:bg-white/5"
                     onClick={() => {
                       setSettingsOpen(false);
-                      router.push("/");
+                      setAddStopOpen(true);
                     }}
                   >
-                    <X className="size-4 text-[var(--muted)]" aria-hidden />
+                    <Plus className="size-4 text-[var(--muted)]" aria-hidden />
+                    Legg til stopp
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-400 transition hover:bg-red-500/10"
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      setConfirmEndOpen(true);
+                    }}
+                  >
+                    <X className="size-4" aria-hidden />
                     Avslutt runde
                   </button>
                 </div>
@@ -481,7 +554,6 @@ export default function ActiveRoutePage() {
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -576,6 +648,159 @@ export default function ActiveRoutePage() {
       )}
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+
+      {confirmEndOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
+          role="presentation"
+          onClick={() => setConfirmEndOpen(false)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="confirm-end-title"
+            aria-describedby="confirm-end-desc"
+            className="w-full max-w-md rounded-xl border border-white/10 bg-[var(--surface)] p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              id="confirm-end-title"
+              className="font-[family-name:var(--font-display)] text-lg text-[var(--text)]"
+            >
+              Avslutte runden?
+            </h2>
+            <p
+              id="confirm-end-desc"
+              className="mt-2 text-sm leading-snug text-[var(--muted)]"
+            >
+              Du går tilbake til forsiden. Fremgangen på denne runden blir ikke
+              fullført som «Vi overlevde».
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmEndOpen(false)}
+                className="flex-1 rounded-lg border border-white/10 px-3 py-2.5 text-sm text-[var(--text)] transition hover:bg-white/5"
+              >
+                Fortsett runden
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmEndOpen(false);
+                  router.push("/");
+                }}
+                className="flex-1 rounded-lg bg-red-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-red-500"
+              >
+                Avslutt runde
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {addStopOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
+          role="presentation"
+          onClick={() => {
+            if (!addingStop) {
+              setAddStopOpen(false);
+              setCustomStopName("");
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-stop-title"
+            className="flex max-h-[80dvh] w-full max-w-md flex-col overflow-hidden rounded-xl border border-white/10 bg-[var(--surface)] shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+              <h2
+                id="add-stop-title"
+                className="font-[family-name:var(--font-display)] text-lg text-[var(--text)]"
+              >
+                Legg til stopp
+              </h2>
+              <button
+                type="button"
+                aria-label="Lukk"
+                disabled={addingStop}
+                onClick={() => {
+                  setAddStopOpen(false);
+                  setCustomStopName("");
+                }}
+                className="inline-flex size-8 items-center justify-center rounded-full text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--text)]"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              <p className="text-xs text-[var(--muted)]">Fra katalogen</p>
+              <ul className="mt-2 space-y-1">
+                {catalogBars === undefined && (
+                  <li className="py-2 text-sm text-[var(--muted)]">Laster…</li>
+                )}
+                {catalogBars !== undefined &&
+                  catalogBars.filter((b) => !instance.barIds.includes(b._id))
+                    .length === 0 && (
+                    <li className="py-2 text-sm text-[var(--muted)]">
+                      Ingen flere utesteder i katalogen.
+                    </li>
+                  )}
+                {(catalogBars ?? [])
+                  .filter((b) => !instance.barIds.includes(b._id))
+                  .map((b) => (
+                    <li key={b._id}>
+                      <button
+                        type="button"
+                        disabled={addingStop}
+                        onClick={() => void onAddCatalogStop(b._id)}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2.5 text-left text-sm text-[var(--text)] transition hover:bg-white/5 disabled:opacity-40"
+                      >
+                        <span className="min-w-0 truncate">{b.name}</span>
+                        <Plus
+                          className="size-4 shrink-0 text-[var(--muted)]"
+                          aria-hidden
+                        />
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+
+              <div className="mt-4 border-t border-white/10 pt-4">
+                <p className="text-xs text-[var(--muted)]">Eget stopp</p>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:border-[var(--brand)]/60 focus:outline-none"
+                    value={customStopName}
+                    onChange={(e) => setCustomStopName(e.target.value)}
+                    placeholder="Navn på stedet…"
+                    disabled={addingStop}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void onAddCustomStop();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={addingStop || !customStopName.trim()}
+                    onClick={() => void onAddCustomStop()}
+                    className="shrink-0 rounded-lg bg-[var(--brand)] px-3 py-2.5 text-sm font-medium text-white disabled:opacity-40"
+                  >
+                    {addingStop ? "…" : "Legg til"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mt-8 flex gap-3">
         <button

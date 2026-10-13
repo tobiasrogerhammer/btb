@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -29,8 +28,6 @@ import {
 } from "@/components/RatingFilter";
 import {
   formatHoursForNow,
-  hoursWarningForWindow,
-  isOpenAtAnyDuringWindow,
   nextOsloYmdForWeekday,
   osloDayAndMinutes,
 } from "@/convex/lib/geo";
@@ -176,7 +173,6 @@ export default function NewRoutePage() {
   const [usedSuggest, setUsedSuggest] = useState(true);
   const [manualEdit, setManualEdit] = useState(false);
   const [showPopular, setShowPopular] = useState(false);
-  const [showCatalog, setShowCatalog] = useState(false);
   const [lastEstimateMinutes, setLastEstimateMinutes] = useState<number | null>(
     null,
   );
@@ -327,26 +323,8 @@ export default function NewRoutePage() {
     if (minRating != null && (bar.rating == null || bar.rating < minRating)) {
       reasons.push("rating");
     }
-    if (
-      !isOpenAtAnyDuringWindow(
-        bar.openingHours,
-        timeWindow.windowStart,
-        timeWindow.windowEnd,
-      )
-    ) {
-      reasons.push("åpningstid");
-    }
+    // Åpningstid ignoreres i rutebyggeren — alle stopp behandles som åpne.
     return reasons;
-  }
-
-  function hoursWarningForBar(bar: {
-    openingHours?: Array<{ day: number; open: string; close: string }>;
-  }): string | null {
-    return hoursWarningForWindow(
-      bar.openingHours,
-      timeWindow.windowStart,
-      timeWindow.windowEnd,
-    );
   }
 
   function addBar(id: Id<"bars">) {
@@ -489,7 +467,7 @@ export default function NewRoutePage() {
               type="button"
               onClick={reshuffle}
               disabled={loadingRoute}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-[var(--text)] transition hover:border-[var(--brand)]/50 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--brand)] px-2.5 py-1.5 text-xs text-[var(--text)] transition hover:bg-[var(--brand)]/10 disabled:opacity-40"
             >
               <Shuffle className="size-3.5" />
               Ny rute
@@ -500,10 +478,10 @@ export default function NewRoutePage() {
               aria-expanded={showOptions}
               aria-controls="route-options"
               aria-label="Options"
-              className={`inline-flex size-8 items-center justify-center rounded-lg border transition ${
+              className={`inline-flex size-8 items-center justify-center rounded-lg border border-[var(--brand)] transition ${
                 showOptions || hasCustomFilters
-                  ? "border-[var(--brand)]/50 text-[var(--brand)]"
-                  : "border-white/10 text-[var(--text)] hover:border-[var(--brand)]/50"
+                  ? "text-[var(--brand)]"
+                  : "text-[var(--text)] hover:bg-[var(--brand)]/10"
               }`}
             >
               <SlidersHorizontal className="size-3.5" aria-hidden />
@@ -638,10 +616,6 @@ export default function NewRoutePage() {
         ) : (
           <ul className="divide-y divide-white/10">
             {ordered.map((bar, index) => {
-              const hoursWarning = hoursWarningForBar(bar);
-              const showHoursWarning =
-                hoursWarning != null &&
-                hoursWarning !== "Ikke åpent i tidsvinduet";
               const hoursLabel = formatHoursForNow(
                 bar.openingHours,
                 timeWindow.windowStart,
@@ -697,28 +671,9 @@ export default function NewRoutePage() {
                       </span>
                     )}
                     {hoursLabel && (
-                      <span
-                        className={`inline-flex items-center gap-0.5 ${
-                          showHoursWarning
-                            ? "font-medium text-[#F59E0B]"
-                            : ""
-                        }`}
-                        title={
-                          showHoursWarning ? (hoursWarning ?? undefined) : undefined
-                        }
-                      >
-                        {showHoursWarning ? (
-                          <AlertTriangle
-                            className="size-2.5 shrink-0"
-                            aria-hidden
-                          />
-                        ) : (
-                          <Clock className="size-2.5 shrink-0" aria-hidden />
-                        )}
+                      <span className="inline-flex items-center gap-0.5">
+                        <Clock className="size-2.5 shrink-0" aria-hidden />
                         <span>{hoursLabel}</span>
-                        {showHoursWarning && (
-                          <span className="sr-only"> ({hoursWarning})</span>
-                        )}
                       </span>
                     )}
                   </div>
@@ -755,7 +710,6 @@ export default function NewRoutePage() {
               type="button"
               onClick={() => {
                 setShowPopular((v) => !v);
-                setShowCatalog(false);
               }}
               aria-expanded={showPopular}
               aria-haspopup="menu"
@@ -847,160 +801,109 @@ export default function NewRoutePage() {
         </div>
 
         <div className="mt-3 border-t border-white/10 pt-3">
-          <button
-            type="button"
-            onClick={() => {
-              setShowCatalog((v) => !v);
-              setShowPopular(false);
-            }}
-            aria-expanded={showCatalog}
-            aria-controls="bar-catalog"
-            className="flex w-full items-center gap-2 rounded-lg bg-black/30 px-3 py-2 text-left text-sm transition hover:bg-black/40"
-          >
-            <span className="min-w-0 flex-1 text-[var(--text)]">
-              Alle stopp
-              {bars != null && (
-                <span className="text-[var(--muted)]">
-                  {" "}
-                  · {barIds.length} valgt av {bars.length}
-                </span>
-              )}
-            </span>
-            <ChevronDown
-              className={`size-4 shrink-0 text-[var(--muted)] transition-transform duration-200 ${
-                showCatalog ? "rotate-180" : ""
-              }`}
-              aria-hidden
-            />
-          </button>
-          {showCatalog && (
-            <ul id="bar-catalog" className="mt-1.5 space-y-2" role="list">
-              {catalogBars.map((bar) => {
-                const selected = barIds.includes(bar._id);
-                const hoursWarning = hoursWarningForBar(bar);
-                const hoursClosedOutside =
-                  hoursWarning === "Ikke åpent i tidsvinduet";
-                const hoursPartialWarning =
-                  hoursWarning != null && !hoursClosedOutside;
-                const hoursLabel = formatHoursForNow(
-                  bar.openingHours,
-                  timeWindow.windowStart,
-                );
-                const hoursAlert = hoursClosedOutside || hoursPartialWarning;
-                return (
-                  <li
-                    key={bar._id}
-                    className={`rounded-lg px-2 py-2 ${
-                      selected ? "bg-[var(--brand)]/20" : "bg-black/30"
-                    }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleBar(bar._id)}
-                        aria-label={
-                          selected
-                            ? `Fjern ${bar.name} fra ruten`
-                            : `Legg til ${bar.name}`
-                        }
-                        className="min-w-0 flex-1 text-left"
-                      >
-                        <p className="truncate text-base font-medium leading-tight tracking-tight text-[var(--text)]">
-                          {bar.name}
-                        </p>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                          {bar.rating != null && (
-                            <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
-                              <Star
-                                className="size-2.5 fill-[#F5C518] text-[#F5C518]"
-                                aria-hidden
-                              />
-                              <span className="tabular-nums">
-                                {bar.rating.toFixed(1).replace(".", ",")}
+          <h2 className="px-1 text-sm text-[var(--text)]">
+            Alle stopp
+            {bars != null && (
+              <span className="text-[var(--muted)]">
+                {" "}
+                · {barIds.length} valgt av {bars.length}
+              </span>
+            )}
+          </h2>
+          <ul id="bar-catalog" className="mt-2 space-y-2" role="list">
+            {catalogBars.map((bar) => {
+              const selected = barIds.includes(bar._id);
+              const hoursLabel = formatHoursForNow(
+                bar.openingHours,
+                timeWindow.windowStart,
+              );
+              return (
+                <li
+                  key={bar._id}
+                  className={`rounded-lg px-2 py-2 ${
+                    selected ? "bg-[var(--brand)]/20" : "bg-black/30"
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleBar(bar._id)}
+                      aria-label={
+                        selected
+                          ? `Fjern ${bar.name} fra ruten`
+                          : `Legg til ${bar.name}`
+                      }
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <p className="truncate text-base font-medium leading-tight tracking-tight text-[var(--text)]">
+                        {bar.name}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                        {bar.rating != null && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                            <Star
+                              className="size-2.5 fill-[#F5C518] text-[#F5C518]"
+                              aria-hidden
+                            />
+                            <span className="tabular-nums">
+                              {bar.rating.toFixed(1).replace(".", ",")}
+                            </span>
+                            {bar.ratingCount != null && (
+                              <span className="tabular-nums text-[var(--muted)]/70">
+                                ({bar.ratingCount})
                               </span>
-                              {bar.ratingCount != null && (
-                                <span className="tabular-nums text-[var(--muted)]/70">
-                                  ({bar.ratingCount})
-                                </span>
-                              )}
-                            </span>
-                          )}
-                          {bar.beerPrice != null && (
-                            <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
-                              <Beer className="size-2.5" aria-hidden />
-                              <span className="tabular-nums">
-                                {bar.beerPrice} kr
-                              </span>
-                            </span>
-                          )}
-                          {hoursLabel && (
-                            <span
-                              className={`inline-flex items-center gap-0.5 text-[11px] leading-none ${
-                                hoursClosedOutside
-                                  ? "font-medium text-red-400"
-                                  : hoursPartialWarning
-                                    ? "font-medium text-[#F59E0B]"
-                                    : "text-[var(--muted)]"
-                              }`}
-                              title={
-                                hoursAlert
-                                  ? (hoursWarning ?? undefined)
-                                  : undefined
-                              }
-                            >
-                              {hoursAlert ? (
-                                <AlertTriangle
-                                  className="size-2.5 shrink-0"
-                                  aria-hidden
-                                />
-                              ) : (
-                                <Clock
-                                  className="size-2.5 shrink-0"
-                                  aria-hidden
-                                />
-                              )}
-                              <span>{hoursLabel}</span>
-                              {hoursAlert && (
-                                <span className="sr-only">
-                                  {" "}
-                                  ({hoursWarning})
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                      <a
-                        href={mapsPlaceUrl(bar)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Vis ${bar.name} i Google Maps`}
-                        className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--brand)]"
-                      >
-                        <MapsPlaceIcon className="size-5" />
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => toggleBar(bar._id)}
-                        aria-label={
-                          selected
-                            ? `Fjern ${bar.name} fra ruten`
-                            : `Legg til ${bar.name}`
-                        }
-                        className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--text)]"
-                      >
-                        {selected ? (
-                          <Minus className="size-4" aria-hidden />
-                        ) : (
-                          <Plus className="size-4" aria-hidden />
+                            )}
+                          </span>
                         )}
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                        {bar.beerPrice != null && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                            <Beer className="size-2.5" aria-hidden />
+                            <span className="tabular-nums">
+                              {bar.beerPrice} kr
+                            </span>
+                          </span>
+                        )}
+                        {hoursLabel && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
+                            <Clock
+                              className="size-2.5 shrink-0"
+                              aria-hidden
+                            />
+                            <span>{hoursLabel}</span>
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                    <a
+                      href={mapsPlaceUrl(bar)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Vis ${bar.name} i Google Maps`}
+                      className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--brand)]"
+                    >
+                      <MapsPlaceIcon className="size-5" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => toggleBar(bar._id)}
+                      aria-label={
+                        selected
+                          ? `Fjern ${bar.name} fra ruten`
+                          : `Legg til ${bar.name}`
+                      }
+                      className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[var(--muted)] transition hover:bg-white/5 hover:text-[var(--text)]"
+                    >
+                      {selected ? (
+                        <Minus className="size-4" aria-hidden />
+                      ) : (
+                        <Plus className="size-4" aria-hidden />
+                      )}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
       </div>

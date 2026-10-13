@@ -270,7 +270,7 @@ Vi overlevde
 
 | Rute | Jobb |
 |------|------|
-| `/` | Landing: **BtB** + CTA **«Klar for kaos»** (uten krav om login) |
+| `/` | Landing: **nextround** (nav) + headline «Bar til bar» + CTA **«Klar for kaos»** (uten krav om login) |
 | `/disclaimer` eller modal | 18+ / ansvar — lenke til [07-disclaimer.md](07-disclaimer.md) |
 | `/personvern` | [08-privacy.md](08-privacy.md) |
 | `/sign-in`, `/sign-up` | Auth (+ claim gjest) |

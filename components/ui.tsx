@@ -4,6 +4,9 @@ import { ArrowLeft, Martini, Route } from "lucide-react";
 import { ReactNode } from "react";
 import { AccountNavLink } from "@/components/AccountNavLink";
 
+/** Wordmark asset: 300×52 */
+const WORDMARK_ASPECT = 300 / 52;
+
 export function BrandMark({
   size = 28,
   withWordmark = true,
@@ -11,23 +14,28 @@ export function BrandMark({
   size?: number;
   withWordmark?: boolean;
 }) {
+  const wordmarkHeight = Math.max(14, Math.round(size * 0.72));
+  const wordmarkWidth = Math.round(wordmarkHeight * WORDMARK_ASPECT);
+
   return (
     <span className="inline-flex items-center gap-2">
       <Image
         src="/logo.png"
-        alt={withWordmark ? "" : "BtB"}
+        alt={withWordmark ? "" : "nextround"}
         width={size}
         height={Math.round(size * (150 / 169))}
         className="shrink-0"
         priority
       />
       {withWordmark && (
-        <span
-          className="font-[family-name:var(--font-display)] font-semibold tracking-tight"
-          style={{ fontSize: Math.max(16, Math.round(size * 0.72)) }}
-        >
-          BtB
-        </span>
+        <Image
+          src="/nextround-logo-white.png"
+          alt="nextround"
+          width={wordmarkWidth}
+          height={wordmarkHeight}
+          className="shrink-0"
+          priority
+        />
       )}
     </span>
   );
@@ -62,21 +70,21 @@ export function AppShell({
     <div className="flex min-h-dvh flex-col bg-[var(--bg)] text-[var(--text)]">
       {!hideNav && (
         <header className="mx-auto flex w-full max-w-md items-center justify-between px-4 py-4">
-          <Link href="/" aria-label="BtB — hjem">
+          <Link href="/" aria-label="nextround — hjem">
             <BrandMark size={28} />
           </Link>
           <nav className="flex items-center gap-3">
             <Link
               href="/routes/new"
               aria-label="Min rute"
-              className="inline-flex size-9 items-center justify-center rounded-full border border-[var(--brand)] text-white transition hover:bg-[var(--brand)]/10"
+              className="inline-flex size-9 items-center justify-center rounded-full border border-white/25 text-white transition hover:border-white/40 hover:bg-white/5"
             >
               <Route className="size-4" aria-hidden />
             </Link>
             <Link
               href="/bars"
               aria-label="Utesteder"
-              className="inline-flex size-9 items-center justify-center rounded-full border border-[var(--brand)] text-white transition hover:bg-[var(--brand)]/10"
+              className="inline-flex size-9 items-center justify-center rounded-full border border-white/25 text-white transition hover:border-white/40 hover:bg-white/5"
             >
               <Martini className="size-4" aria-hidden />
             </Link>

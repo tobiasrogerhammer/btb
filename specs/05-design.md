@@ -2,7 +2,7 @@
 
 ## Retning
 
-BtB («Bar-til-bar») skal føles som en **kveld ute**, ikke et admin-dashboard. Mobil-først, tydelig hierarki, lav friksjon midt i en runde.
+nextround skal føles som en **kveld ute**, ikke et admin-dashboard. Mobil-først, tydelig hierarki, lav friksjon midt i en runde.
 
 Tone: uformell, sosial, **20–25 studentliv** — humoristisk uten å bli barnslig, «startup-lilla» eller guttefest-klisje.
 
@@ -71,8 +71,8 @@ Brand `#CC3F0C` er den eneste sterke accenten. Ingen lilla. Hold paletten kort.
 
 - Fil: [`public/logo.png`](../public/logo.png) — geometrisk merke (bue + prikk) i brand-oransje på mørk bakgrunn.
 - Favicon: `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png` (generert fra `public/logo.png`).
-- Bruk i nav (`BrandMark`); landing hero er display-«Bar til bar» uten logo over — logo + wordmark i header.
-- **Link-deling:** `public/og-image.png` + eksplisitt `openGraph.images` / `twitter.images` i `app/layout.tsx` (med `metadataBase`). Uten dette faller mange plattformer tilbake til Vercel-default.
+- Bruk i nav (`BrandMark`: geometrisk merke + `public/nextround-logo-white.png`); landing hero er display-«Bar til bar» uten logo over.
+- **Link-deling:** `public/og-image.png` + eksplisitt `openGraph.images` / `twitter.images` i `app/layout.tsx` (`metadataBase` = `https://nextround.no`). Uten dette faller mange plattformer tilbake til Vercel-default. (Nytt OG-bilde: se [09-rebrand-nextround.md](09-rebrand-nextround.md).)
 
 ## Rutebygger / foreslått runde
 
@@ -98,7 +98,7 @@ Etter forslag eller under manuell bygging (`/routes/new`):
 - **Options** (Lucide `SlidersHorizontal`) ved siden av «Ny rute»: inline panel uten egen boks/border; maks ølpris, min. rating, **uten-dag** (`<select>`-dropdown, man–søn, default = dagens ukedag i Oslo), tidsvindu (fra–til) — norsk copy.
 - Stopp-rad i «Din rute»: flat liste med **separatorer** (ikke egne bokser). Vertikalt sentrert rad: **navn** (primær) · meta under (rating, ølpris, åpningstid) · kart/fjern. Ved mismatch: åpningstid i amber + Lucide `AlertTriangle`.
 - **Populære ruter:** popup-meny over knappen (ikke inline-liste); lukkes ved valg / klikk utenfor.
-- Katalog («Alle stopp»): samme rad-layout som «Din rute» (navn; under: rating, ølpris, åpningstid). Delvis mismatch → amber + `AlertTriangle`; **helt utenfor** tidsvindu → **rød** åpningstid + `AlertTriangle`. Bekreftelsesdialog ved add som bryter pris/rating/åpningstid.
+- Katalog («Alle stopp»): **alltid synlig liste** (ikke accordion/dropdown). Samme rad-layout som «Din rute» (navn; under: rating, ølpris, åpningstid). Delvis mismatch → amber + `AlertTriangle`; **helt utenfor** tidsvindu → **rød** åpningstid + `AlertTriangle`. Bekreftelsesdialog ved add som bryter pris/rating/åpningstid.
 - Rekkefølge: opp/ned-kontroller (Lucide `ChevronUp` / `ChevronDown`).
 - Fjern: tydelig, tommelvennlig — ikke gjemt i swipe-only.
 - Estimat i «Din rute»-header oppdateres live.
@@ -133,12 +133,12 @@ Hovedskjerm under bruk (`/routes/[instanceId]`):
 - **Navbar forblir synlig** under aktiv runde (samme shell som resten av appen).
 - Avhuk og bilde uten å scrolle bort fra konteksten unødvendig.
 - Fullført stopp skal gi tydelig, kort feedback (ikke confetti-storm).
-- «Legg til stopp» er sekundær handling (ikke like fremtredende som sjekk-inn), men alltid tilgjengelig på aktiv runde og i rutebygger.
+- «Legg til stopp» er sekundær handling (ikke like fremtredende som sjekk-inn), men alltid tilgjengelig: i rutebygger, og på aktiv runde via **innstillinger** (katalog + eget stopp).
 
 ## Landing
 
 - Full-bleed atmosfære (bilde/gradient som plan).
-- **BtB** som hero-nivå signal (evt. undertittel «Bar-til-bar»).
+- **nextround** i nav; landing-headline **«Bar til bar»**.
 - Én headline + én setning + CTA (**«Klar for kaos»** — uten login-krav).
 - Visuell anker: bar-scene SVG (`public/bar-scene.svg`), ikke kart.
 - Ingen kort-grid, ingen feature-stat-strips i første viewport.
@@ -161,7 +161,7 @@ Hovedskjerm under bruk (`/routes/[instanceId]`):
 
 - Norsk bokmål i UI.
 - **Domeneord (låst):**
-  - Merkevare → **BtB** (Bar-til-bar)
+  - Merkevare → **nextround**
   - Starte runde → **Klar for kaos** / **Start kvelden**
   - Barer / katalog → **Utesteder**
   - Oppgaver → **Utfordringer** (ikke «øvinger»)

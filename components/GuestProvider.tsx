@@ -11,7 +11,25 @@ import {
   ReactNode,
 } from "react";
 
-const STORAGE_KEY = "BtB_guest_token";
+const STORAGE_KEY = "nextround_guest_token";
+const LEGACY_STORAGE_KEY = "BtB_guest_token";
+
+function readStoredToken(): string | null {
+  const current = localStorage.getItem(STORAGE_KEY);
+  if (current) return current;
+  const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (legacy) {
+    localStorage.setItem(STORAGE_KEY, legacy);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return legacy;
+  }
+  return null;
+}
+
+function clearStoredToken() {
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+}
 
 type GuestContextValue = {
   guestToken: string | null;
@@ -29,19 +47,20 @@ export function GuestProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   const clearGuest = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    clearStoredToken();
     setGuestToken(null);
   }, []);
 
   const createFresh = useCallback(async () => {
     const session = await createGuest({ now: Date.now() });
     localStorage.setItem(STORAGE_KEY, session.token);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
     setGuestToken(session.token);
     return session.token;
   }, [createGuest]);
 
   const ensureGuest = useCallback(async () => {
-    const existing = localStorage.getItem(STORAGE_KEY);
+    const existing = readStoredToken();
     if (existing) {
       const session = await convex.query(api.guestSessions.getByToken, {
         token: existing,
@@ -53,7 +72,7 @@ export function GuestProvider({ children }: { children: ReactNode }) {
         return existing;
       }
       // Utløpt, slettet eller claimet — start på nytt
-      localStorage.removeItem(STORAGE_KEY);
+      clearStoredToken();
       setGuestToken(null);
     }
     return await createFresh();
@@ -63,7 +82,7 @@ export function GuestProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     void (async () => {
       try {
-        const existing = localStorage.getItem(STORAGE_KEY);
+        const existing = readStoredToken();
         if (!existing) {
           if (!cancelled) setReady(true);
           return;
@@ -76,12 +95,12 @@ export function GuestProvider({ children }: { children: ReactNode }) {
         if (session && !session.claimed) {
           setGuestToken(existing);
         } else {
-          localStorage.removeItem(STORAGE_KEY);
+          clearStoredToken();
           setGuestToken(null);
         }
       } catch {
         // Convex ikke klar / nettverk — behold token; ensureGuest validerer senere
-        const existing = localStorage.getItem(STORAGE_KEY);
+        const existing = readStoredToken();
         if (existing && !cancelled) setGuestToken(existing);
       } finally {
         if (!cancelled) setReady(true);
