@@ -71,7 +71,7 @@ Brand `#CC3F0C` er den eneste sterke accenten. Ingen lilla. Hold paletten kort.
 
 - Fil: [`public/logo.png`](../public/logo.png) — geometrisk merke (bue + prikk) i brand-oransje på mørk bakgrunn.
 - Favicon: `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png` (generert fra `public/logo.png`).
-- Bruk i nav (`BrandMark`: geometrisk merke + `public/nextround-logo-white.png`); landing hero er display-«Bar til bar» uten logo over.
+- Bruk i nav (`BrandMark`: `public/nextround-logo-white.png` — hvit «n» først i navnet, oransje sirkel som «o»). Favicon beholder det geometriske merket. Landing hero er display-«Bar til bar» uten logo over.
 - **Link-deling:** `public/og-image.png` + eksplisitt `openGraph.images` / `twitter.images` i `app/layout.tsx` (`metadataBase` = `https://nextround.no`). Uten dette faller mange plattformer tilbake til Vercel-default. (Nytt OG-bilde: se [09-rebrand-nextround.md](09-rebrand-nextround.md).)
 
 ## Rutebygger / foreslått runde

@@ -18,26 +18,14 @@ export function BrandMark({
   const wordmarkWidth = Math.round(wordmarkHeight * WORDMARK_ASPECT);
 
   return (
-    <span className="inline-flex items-center gap-2">
-      <Image
-        src="/logo.png"
-        alt={withWordmark ? "" : "nextround"}
-        width={size}
-        height={Math.round(size * (150 / 169))}
-        className="shrink-0"
-        priority
-      />
-      {withWordmark && (
-        <Image
-          src="/nextround-logo-white.png"
-          alt="nextround"
-          width={wordmarkWidth}
-          height={wordmarkHeight}
-          className="shrink-0"
-          priority
-        />
-      )}
-    </span>
+    <Image
+      src="/nextround-logo-white.png"
+      alt="nextround"
+      width={withWordmark ? wordmarkWidth : size}
+      height={withWordmark ? wordmarkHeight : Math.round(size / WORDMARK_ASPECT)}
+      className="shrink-0"
+      priority
+    />
   );
 }
 

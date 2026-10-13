@@ -7,6 +7,10 @@ import {
   endOfNextOsloDay,
   estimateRoute,
   haversineMeters,
+  isOpenAtAnyDuringWindow,
+  isOpenDuringWindow,
+  isOpenNow,
+  orderRouteByOpeningHours,
   TRONDHEIM_CENTER,
 } from "./lib/geo";
 
@@ -114,22 +118,60 @@ export const suggest = query({
       };
     }
 
-    // Rutebygger: alle stopp behandles som åpne (åpningstid filterer ikke forslag).
-    const candidates = pool;
+    const useWindow =
+      args.windowStart != null &&
+      args.windowEnd != null &&
+      args.windowEnd > args.windowStart;
+
+    let candidates = pool.filter((b) =>
+      useWindow
+        ? isOpenAtAnyDuringWindow(
+            b.openingHours,
+            args.windowStart!,
+            args.windowEnd!,
+          )
+        : isOpenNow(b.openingHours, args.now),
+    );
     let message: string | undefined;
+    const openCount = candidates.length;
+    if (openCount <= 5) {
+      message = `${openCount} utesteder åpne, utvid filter for fler valg`;
+    }
+    // Under 2 åpne: fall tilbake til pool (pris/rating) så forslag fortsatt kan bygges
+    if (openCount < 2) {
+      candidates = pool;
+    }
 
     const center = {
       lat: args.startLat ?? TRONDHEIM_CENTER.lat,
       lng: args.startLng ?? TRONDHEIM_CENTER.lng,
     };
 
+    const fullOpen = useWindow
+      ? candidates.filter((b) =>
+          isOpenDuringWindow(
+            b.openingHours,
+            args.windowStart!,
+            args.windowEnd!,
+          ),
+        )
+      : candidates;
+    const fullOpenIds = new Set(fullOpen.map((b) => b._id));
+
     const remaining = [...candidates];
     const picked: typeof candidates = [];
 
+    // Prefer start among bars open for the entire window (default filter)
     const seed = args.seed ?? 0;
-    if (remaining.length > 0) {
-      const startIdx = Math.abs(Math.floor(seed)) % remaining.length;
-      const first = remaining.splice(startIdx, 1)[0]!;
+    const startPool =
+      fullOpen.length > 0
+        ? remaining.filter((b) => fullOpenIds.has(b._id))
+        : remaining;
+    if (startPool.length > 0) {
+      const startIdx = Math.abs(Math.floor(seed)) % startPool.length;
+      const first = startPool[startIdx]!;
+      const remIdx = remaining.findIndex((b) => b._id === first._id);
+      if (remIdx >= 0) remaining.splice(remIdx, 1);
       picked.push(first);
     }
 
@@ -152,10 +194,13 @@ export const suggest = query({
         : null;
 
     while (picked.length < stopTarget && remaining.length > 0) {
+      // Prefer nearest among fully-open, then fall back to any remaining
+      const prefer = remaining.filter((b) => fullOpenIds.has(b._id));
+      const search = prefer.length > 0 ? prefer : remaining;
       let bestIdx = 0;
       let bestDist = Infinity;
-      for (let i = 0; i < remaining.length; i++) {
-        const b = remaining[i]!;
+      for (let i = 0; i < search.length; i++) {
+        const b = search[i]!;
         const d = haversineMeters(current, {
           lat: b.lat!,
           lng: b.lng!,
@@ -165,7 +210,9 @@ export const suggest = query({
           bestIdx = i;
         }
       }
-      const next = remaining.splice(bestIdx, 1)[0]!;
+      const next = search[bestIdx]!;
+      const remIdx = remaining.findIndex((b) => b._id === next._id);
+      if (remIdx >= 0) remaining.splice(remIdx, 1);
       const trial = [...picked, next];
       if (timeBudget != null && trial.length >= 2) {
         const trialEst = estimateRoute(trial);
@@ -212,7 +259,15 @@ export const suggest = query({
       }
     }
 
-    const ordered = picked;
+    const ordered =
+      useWindow && picked.length >= 2
+        ? orderRouteByOpeningHours(
+            picked,
+            args.windowStart!,
+            args.windowEnd!,
+            center,
+          )
+        : picked;
 
     const barIds = ordered.map((b) => b._id);
     const est = estimateRoute(ordered);

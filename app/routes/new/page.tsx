@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -28,6 +29,8 @@ import {
 } from "@/components/RatingFilter";
 import {
   formatHoursForNow,
+  hoursWarningForWindow,
+  isOpenAtAnyDuringWindow,
   nextOsloYmdForWeekday,
   osloDayAndMinutes,
 } from "@/convex/lib/geo";
@@ -323,8 +326,26 @@ export default function NewRoutePage() {
     if (minRating != null && (bar.rating == null || bar.rating < minRating)) {
       reasons.push("rating");
     }
-    // Åpningstid ignoreres i rutebyggeren — alle stopp behandles som åpne.
+    if (
+      !isOpenAtAnyDuringWindow(
+        bar.openingHours,
+        timeWindow.windowStart,
+        timeWindow.windowEnd,
+      )
+    ) {
+      reasons.push("åpningstid");
+    }
     return reasons;
+  }
+
+  function hoursWarningForBar(bar: {
+    openingHours?: Array<{ day: number; open: string; close: string }>;
+  }): string | null {
+    return hoursWarningForWindow(
+      bar.openingHours,
+      timeWindow.windowStart,
+      timeWindow.windowEnd,
+    );
   }
 
   function addBar(id: Id<"bars">) {
@@ -616,6 +637,10 @@ export default function NewRoutePage() {
         ) : (
           <ul className="divide-y divide-white/10">
             {ordered.map((bar, index) => {
+              const hoursWarning = hoursWarningForBar(bar);
+              const showHoursWarning =
+                hoursWarning != null &&
+                hoursWarning !== "Ikke åpent i tidsvinduet";
               const hoursLabel = formatHoursForNow(
                 bar.openingHours,
                 timeWindow.windowStart,
@@ -671,9 +696,28 @@ export default function NewRoutePage() {
                       </span>
                     )}
                     {hoursLabel && (
-                      <span className="inline-flex items-center gap-0.5">
-                        <Clock className="size-2.5 shrink-0" aria-hidden />
+                      <span
+                        className={`inline-flex items-center gap-0.5 ${
+                          showHoursWarning
+                            ? "font-medium text-[#F59E0B]"
+                            : ""
+                        }`}
+                        title={
+                          showHoursWarning ? (hoursWarning ?? undefined) : undefined
+                        }
+                      >
+                        {showHoursWarning ? (
+                          <AlertTriangle
+                            className="size-2.5 shrink-0"
+                            aria-hidden
+                          />
+                        ) : (
+                          <Clock className="size-2.5 shrink-0" aria-hidden />
+                        )}
                         <span>{hoursLabel}</span>
+                        {showHoursWarning && (
+                          <span className="sr-only"> ({hoursWarning})</span>
+                        )}
                       </span>
                     )}
                   </div>
@@ -813,10 +857,16 @@ export default function NewRoutePage() {
           <ul id="bar-catalog" className="mt-2 space-y-2" role="list">
             {catalogBars.map((bar) => {
               const selected = barIds.includes(bar._id);
+              const hoursWarning = hoursWarningForBar(bar);
+              const hoursClosedOutside =
+                hoursWarning === "Ikke åpent i tidsvinduet";
+              const hoursPartialWarning =
+                hoursWarning != null && !hoursClosedOutside;
               const hoursLabel = formatHoursForNow(
                 bar.openingHours,
                 timeWindow.windowStart,
               );
+              const hoursAlert = hoursClosedOutside || hoursPartialWarning;
               return (
                 <li
                   key={bar._id}
@@ -864,12 +914,38 @@ export default function NewRoutePage() {
                           </span>
                         )}
                         {hoursLabel && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] leading-none text-[var(--muted)]">
-                            <Clock
-                              className="size-2.5 shrink-0"
-                              aria-hidden
-                            />
+                          <span
+                            className={`inline-flex items-center gap-0.5 text-[11px] leading-none ${
+                              hoursClosedOutside
+                                ? "font-medium text-red-400"
+                                : hoursPartialWarning
+                                  ? "font-medium text-[#F59E0B]"
+                                  : "text-[var(--muted)]"
+                            }`}
+                            title={
+                              hoursAlert
+                                ? (hoursWarning ?? undefined)
+                                : undefined
+                            }
+                          >
+                            {hoursAlert ? (
+                              <AlertTriangle
+                                className="size-2.5 shrink-0"
+                                aria-hidden
+                              />
+                            ) : (
+                              <Clock
+                                className="size-2.5 shrink-0"
+                                aria-hidden
+                              />
+                            )}
                             <span>{hoursLabel}</span>
+                            {hoursAlert && (
+                              <span className="sr-only">
+                                {" "}
+                                ({hoursWarning})
+                              </span>
+                            )}
                           </span>
                         )}
                       </div>
