@@ -18,11 +18,19 @@ const display = Syne({
 const siteUrl = "https://nextround.no";
 
 /**
- * Public URL for link previews.
- * Rename/version this path when the asset changes — iMessage/Slack/Meta cache by URL
- * and will keep the old image even after browser history is cleared.
+ * Link preview images.
+ * Rename/version these paths when assets change — platforms cache by URL.
+ * Square listed first so Snapchat (1:1) picks it; landscape for FB/Twitter.
  */
-const shareImage = {
+const shareImageSquare = {
+  url: "/og-share-square.png",
+  width: 1024,
+  height: 1024,
+  alt: "NextRound - Klar for kaos?",
+  type: "image/png",
+} as const;
+
+const shareImageLandscape = {
   url: "/og-share.png",
   width: 1200,
   height: 630,
@@ -44,13 +52,13 @@ export const metadata: Metadata = {
     siteName: "nextround",
     title: "NextRound - Bar til bar",
     description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
-    images: [shareImage],
+    images: [shareImageSquare, shareImageLandscape],
   },
   twitter: {
     card: "summary_large_image",
     title: "NextRound - Bar til bar",
     description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
-    images: [shareImage.url],
+    images: [shareImageLandscape.url],
   },
 };
 
