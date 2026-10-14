@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { DM_Sans, Syne } from "next/font/google";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import { GuestProvider } from "@/components/GuestProvider";
@@ -16,11 +17,13 @@ const display = Syne({
 });
 
 const siteUrl = "https://nextround.no";
+const shareDescription =
+  "Legger opp din rute for kvelden — finn ditt neste stopp her.";
 
 /**
- * Link preview images.
- * Rename/version these paths when assets change — platforms cache by URL.
- * Landscape first (Facebook/iMessage); square second (Snapchat 1:1).
+ * One og:image only — iMessage shows every og:image as a collage.
+ * Snapbot gets the square asset; everyone else gets landscape.
+ * Rename/version paths when assets change (platforms cache by URL).
  */
 const shareImageLandscape = {
   url: "/og-share.png",
@@ -38,29 +41,41 @@ const shareImageSquare = {
   type: "image/png",
 } as const;
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: "NextRound - Bar til bar",
-    template: "%s — NextRound",
-  },
-  description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
-  openGraph: {
-    type: "website",
-    locale: "nb_NO",
-    url: siteUrl,
-    siteName: "nextround",
-    title: "NextRound - Bar til bar",
-    description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
-    images: [shareImageLandscape, shareImageSquare],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "NextRound - Bar til bar",
-    description: "Legger opp din rute for kvelden — finn ditt neste stopp her.",
-    images: [shareImageLandscape.url],
-  },
-};
+function isSnapPreviewBot(userAgent: string): boolean {
+  return /Snap URL Preview Service|Snapchat/i.test(userAgent);
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const headerList = await headers();
+  const userAgent = headerList.get("user-agent") ?? "";
+  const shareImage = isSnapPreviewBot(userAgent)
+    ? shareImageSquare
+    : shareImageLandscape;
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: "NextRound - Bar til bar",
+      template: "%s — NextRound",
+    },
+    description: shareDescription,
+    openGraph: {
+      type: "website",
+      locale: "nb_NO",
+      url: siteUrl,
+      siteName: "nextround",
+      title: "NextRound - Bar til bar",
+      description: shareDescription,
+      images: [shareImage],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "NextRound - Bar til bar",
+      description: shareDescription,
+      images: [shareImageLandscape.url],
+    },
+  };
+}
 
 export default function RootLayout({
   children,

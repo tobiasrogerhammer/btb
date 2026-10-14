@@ -74,7 +74,7 @@ Fra `nextround-logopakke` (full pakke speilet i [`public/brand/`](../public/bran
 - **Merke** (`n` + `o` i ett): [`public/logo.png`](../public/logo.png) / `.svg` — brukes i favicon, app-ikon, delebilde-hjørne.
 - **Wordmark** (hvit + oransje o): [`public/nextround-wordmark.png`](../public/nextround-wordmark.png) — `BrandMark` i nav. (`nextround-logo-white.png` er helt hvit — ikke bruk i nav.)
 - **App-ikoner:** `app/favicon.ico`, `app/favicon.svg`, `app/icon.png` / `.svg`, `app/apple-icon.png` / `.svg`.
-- **OG / sosial:** [`public/og-share.png`](../public/og-share.png) (1200×630, primær) + [`public/og-share-square.png`](../public/og-share-square.png) (1024×1024, Snap) i `app/layout.tsx`. Bytt filnavn ved oppdatering — plattformer cacher på URL.
+- **OG / sosial:** én `og:image` per request (iMessage collage-er flere). Default [`public/og-share.png`](../public/og-share.png) (1200×630); Snap-boten får [`public/og-share-square.png`](../public/og-share-square.png) (1024×1024) via UA i `generateMetadata`. Bytt filnavn ved oppdatering — plattformer cacher på URL.
 - Landing hero er display-«Bar til bar» uten logo over.
 
 ## Delebilde (eksport av kveld)
