@@ -335,9 +335,11 @@ export default function ActiveRoutePage() {
       : [];
   const hoursLabel = bar ? formatHoursForNow(bar.openingHours, now) : null;
 
+  const roundActive = instance.status === "active";
+
   async function onCheckIn() {
     if (!bar || checkingIn) return;
-    if (instance.status !== "active") {
+    if (!roundActive) {
       setError("Runden er avsluttet — innsjekk er stengt");
       return;
     }
@@ -729,7 +731,7 @@ export default function ActiveRoutePage() {
               </a>
             </div>
             {!log ? (
-              instance.status === "active" ? (
+              roundActive ? (
                 <div className="mt-4">
                   <PrimaryButton
                     disabled={checkingIn}
