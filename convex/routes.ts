@@ -2,7 +2,11 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { ownsResource, requireOwner, requireUserId } from "./lib/auth";
+import {
+  requireOwner,
+  requireResourceOwner,
+  requireUserId,
+} from "./lib/auth";
 import { logPhotoIds } from "./lib/photos";
 import {
   endOfNextOsloDay,
@@ -389,13 +393,11 @@ export const getInstance = query({
   handler: async (ctx, args) => {
     const instance = await ctx.db.get(args.instanceId);
     if (!instance) return null;
-    const owner = await requireOwner(ctx, {
+    await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) {
-      throw new Error("Ingen tilgang");
-    }
     const template = await ctx.db.get(instance.templateId);
     const bars = [];
     for (const id of instance.barIds) {
@@ -491,11 +493,11 @@ export const complete = mutation({
   handler: async (ctx, args) => {
     const instance = await ctx.db.get(args.instanceId);
     if (!instance) throw new Error("Emne ikke funnet");
-    const owner = await requireOwner(ctx, {
+    const owner = await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
     if (instance.status === "completed") return null;
 
     await ctx.db.patch(args.instanceId, {
@@ -530,11 +532,11 @@ export const rename = mutation({
     }
     const instance = await ctx.db.get(args.instanceId);
     if (!instance) throw new Error("Emne ikke funnet");
-    const owner = await requireOwner(ctx, {
+    await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
 
     await ctx.db.patch(instance.templateId, { name: trimmed });
     return null;
@@ -555,11 +557,11 @@ export const addStop = mutation({
     if (instance.status !== "active") {
       throw new Error("Kan bare legge til stopp på aktiv runde");
     }
-    const owner = await requireOwner(ctx, {
+    await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
     if (instance.barIds.includes(args.barId)) {
       throw new Error("Stoppet er allerede i runden");
     }
@@ -630,13 +632,11 @@ export const deleteInstance = mutation({
   handler: async (ctx, args) => {
     const instance = await ctx.db.get(args.instanceId);
     if (!instance) throw new Error("Kvelden ble ikke funnet");
-    const owner = await requireOwner(ctx, {
+    const owner = await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) {
-      throw new Error("Kvelden ble ikke funnet");
-    }
 
     const logs = await ctx.db
       .query("stopLogs")

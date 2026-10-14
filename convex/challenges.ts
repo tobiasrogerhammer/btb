@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { requireOwner, ownsResource } from "./lib/auth";
+import { requireOwner, requireResourceOwner } from "./lib/auth";
 
 export const listForBars = query({
   args: {
@@ -117,13 +117,11 @@ export const createForInstance = mutation({
     }
     const instance = await ctx.db.get(args.instanceId);
     if (!instance) throw new Error("Emne ikke funnet");
-    const owner = await requireOwner(ctx, {
+    const owner = await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) {
-      throw new Error("Ingen tilgang");
-    }
     if (!instance.barIds.includes(args.barId)) {
       throw new Error("Stoppet er ikke på denne runden");
     }

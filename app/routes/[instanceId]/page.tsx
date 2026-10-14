@@ -39,6 +39,14 @@ function formatElapsed(ms: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+/** Plukk lesbar melding ut av Convex server-feil. */
+function clientErrorMessage(e: unknown, fallback: string): string {
+  if (!(e instanceof Error)) return fallback;
+  const uncaught = e.message.match(/Uncaught Error:\s*(.+?)(?:\n|$)/);
+  if (uncaught?.[1]) return uncaught[1].trim();
+  return e.message || fallback;
+}
+
 /** Google Maps–stil sted-ikon (skrå firkant med svingpil). */
 function MapsPlaceIcon({ className }: { className?: string }) {
   return (
@@ -329,6 +337,10 @@ export default function ActiveRoutePage() {
 
   async function onCheckIn() {
     if (!bar || checkingIn) return;
+    if (instance.status !== "active") {
+      setError("Runden er avsluttet — innsjekk er stengt");
+      return;
+    }
     setError(null);
     setCheckingIn(true);
     try {
@@ -342,7 +354,7 @@ export default function ActiveRoutePage() {
       });
       setCheckInBurst(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Feil");
+      setError(clientErrorMessage(e, "Kunne ikke sjekke inn"));
     } finally {
       setCheckingIn(false);
     }
@@ -717,14 +729,20 @@ export default function ActiveRoutePage() {
               </a>
             </div>
             {!log ? (
-              <div className="mt-4">
-                <PrimaryButton
-                  disabled={checkingIn}
-                  onClick={() => void onCheckIn()}
-                >
-                  {checkingIn ? "Sjekker inn…" : "Sjekk inn"}
-                </PrimaryButton>
-              </div>
+              instance.status === "active" ? (
+                <div className="mt-4">
+                  <PrimaryButton
+                    disabled={checkingIn}
+                    onClick={() => void onCheckIn()}
+                  >
+                    {checkingIn ? "Sjekker inn…" : "Sjekk inn"}
+                  </PrimaryButton>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-[var(--muted)]">
+                  Runden er avsluttet
+                </p>
+              )
             ) : (
               <p className="venue-checked__status relative z-[1] mt-3 flex items-center gap-2 text-sm font-medium text-white">
                 <Check className="size-4" aria-hidden /> Innsjekket

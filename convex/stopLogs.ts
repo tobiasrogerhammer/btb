@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
-import { ownsResource, requireOwner } from "./lib/auth";
+import { requireOwner, requireResourceOwner } from "./lib/auth";
 import {
   MAX_PHOTOS_PER_INSTANCE,
   MAX_PHOTOS_PER_STOP,
@@ -32,13 +32,11 @@ export const listForInstance = query({
   handler: async (ctx, args) => {
     const instance = await ctx.db.get(args.instanceId);
     if (!instance) return [];
-    const owner = await requireOwner(ctx, {
+    await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) {
-      throw new Error("Ingen tilgang");
-    }
     const logs = await ctx.db
       .query("stopLogs")
       .withIndex("by_instance", (q) => q.eq("instanceId", args.instanceId))
@@ -78,18 +76,18 @@ export const checkIn = mutation({
     if (!instance || instance.status !== "active") {
       throw new Error("Aktiv runde kreves");
     }
-    const owner = await requireOwner(ctx, {
+    const owner = await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
 
     const existing = await ctx.db
       .query("stopLogs")
       .withIndex("by_instance_and_bar", (q) =>
         q.eq("instanceId", args.instanceId).eq("barId", args.barId),
       )
-      .unique();
+      .first();
     if (existing) return existing._id;
 
     return await ctx.db.insert("stopLogs", {
@@ -118,11 +116,11 @@ export const toggleChallenge = mutation({
     if (!log) throw new Error("Stopp-logg ikke funnet");
     const instance = await ctx.db.get(log.instanceId);
     if (!instance) throw new Error("Emne ikke funnet");
-    const owner = await requireOwner(ctx, {
+    await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
 
     const set = new Set(log.completedChallengeIds);
     if (set.has(args.challengeId)) set.delete(args.challengeId);
@@ -168,11 +166,11 @@ export const attachPhoto = mutation({
     if (!log) throw new Error("Stopp-logg ikke funnet");
     const instance = await ctx.db.get(log.instanceId);
     if (!instance) throw new Error("Emne ikke funnet");
-    const owner = await requireOwner(ctx, {
+    await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
 
     const existing = logPhotoIds(log);
     const allLogs = await ctx.db
@@ -214,11 +212,11 @@ export const removePhoto = mutation({
     if (instance.status !== "active") {
       throw new Error("Bilder kan bare fjernes mens runden pågår");
     }
-    const owner = await requireOwner(ctx, {
+    await requireResourceOwner(ctx, {
       guestToken: args.guestToken,
       now: args.now,
+      resource: instance,
     });
-    if (!ownsResource(owner, instance)) throw new Error("Ingen tilgang");
 
     const existing = logPhotoIds(log);
     if (!existing.includes(args.storageId)) return null;
